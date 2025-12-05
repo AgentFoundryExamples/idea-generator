@@ -1,6 +1,6 @@
 {
   "schema_version": "2.0",
-  "total_files": 15,
+  "total_files": 21,
   "files": [
     {
       "schema_version": "2.0",
@@ -39,8 +39,8 @@
       "summary": "Python command-line interface (role: cli)",
       "summary_text": "Python command-line interface (role: cli)",
       "metrics": {
-        "size_bytes": 13068,
-        "loc": 307,
+        "size_bytes": 20794,
+        "loc": 461,
         "todo_count": 0
       }
     },
@@ -53,8 +53,8 @@
       "summary": "Python configuration file (role: configuration)",
       "summary_text": "Python configuration file (role: configuration)",
       "metrics": {
-        "size_bytes": 7109,
-        "loc": 177,
+        "size_bytes": 7872,
+        "loc": 201,
         "todo_count": 0
       }
     },
@@ -74,6 +74,34 @@
     },
     {
       "schema_version": "2.0",
+      "path": "idea_generator/llm/__init__.py",
+      "language": "Python",
+      "role": "module-init",
+      "role_justification": "module initialization file '__init__'",
+      "summary": "Python module initialization (role: module-init)",
+      "summary_text": "Python module initialization (role: module-init)",
+      "metrics": {
+        "size_bytes": 723,
+        "loc": 5,
+        "todo_count": 0
+      }
+    },
+    {
+      "schema_version": "2.0",
+      "path": "idea_generator/llm/client.py",
+      "language": "Python",
+      "role": "implementation",
+      "role_justification": "general implementation file (default classification)",
+      "summary": "Python module for client",
+      "summary_text": "Python module for client",
+      "metrics": {
+        "size_bytes": 8627,
+        "loc": 181,
+        "todo_count": 0
+      }
+    },
+    {
+      "schema_version": "2.0",
       "path": "idea_generator/models.py",
       "language": "Python",
       "role": "model",
@@ -81,8 +109,36 @@
       "summary": "Python data models (role: model)",
       "summary_text": "Python data models (role: model)",
       "metrics": {
-        "size_bytes": 3255,
-        "loc": 63,
+        "size_bytes": 5313,
+        "loc": 113,
+        "todo_count": 0
+      }
+    },
+    {
+      "schema_version": "2.0",
+      "path": "idea_generator/pipelines/__init__.py",
+      "language": "Python",
+      "role": "module-init",
+      "role_justification": "module initialization file '__init__'",
+      "summary": "Python module initialization (role: module-init)",
+      "summary_text": "Python module initialization (role: module-init)",
+      "metrics": {
+        "size_bytes": 775,
+        "loc": 5,
+        "todo_count": 0
+      }
+    },
+    {
+      "schema_version": "2.0",
+      "path": "idea_generator/pipelines/summarize.py",
+      "language": "Python",
+      "role": "implementation",
+      "role_justification": "general implementation file (default classification)",
+      "summary": "Python module for summarize",
+      "summary_text": "Python module for summarize",
+      "metrics": {
+        "size_bytes": 14510,
+        "loc": 301,
         "todo_count": 0
       }
     },
@@ -137,8 +193,8 @@
       "summary": "Python test file (role: test)",
       "summary_text": "Python test file (role: test)",
       "metrics": {
-        "size_bytes": 8288,
-        "loc": 168,
+        "size_bytes": 8690,
+        "loc": 175,
         "todo_count": 0
       }
     },
@@ -186,6 +242,20 @@
     },
     {
       "schema_version": "2.0",
+      "path": "tests/test_llm_client.py",
+      "language": "Python",
+      "role": "test",
+      "role_justification": "filename starts with 'test_'",
+      "summary": "Python test file (role: test)",
+      "summary_text": "Python test file (role: test)",
+      "metrics": {
+        "size_bytes": 13305,
+        "loc": 265,
+        "todo_count": 0
+      }
+    },
+    {
+      "schema_version": "2.0",
       "path": "tests/test_models.py",
       "language": "Python",
       "role": "test",
@@ -193,8 +263,8 @@
       "summary": "Python test file (role: test)",
       "summary_text": "Python test file (role: test)",
       "metrics": {
-        "size_bytes": 6133,
-        "loc": 142,
+        "size_bytes": 11014,
+        "loc": 274,
         "todo_count": 0
       }
     },
@@ -209,6 +279,20 @@
       "metrics": {
         "size_bytes": 14534,
         "loc": 249,
+        "todo_count": 0
+      }
+    },
+    {
+      "schema_version": "2.0",
+      "path": "tests/test_summarize_pipeline.py",
+      "language": "Python",
+      "role": "test",
+      "role_justification": "filename starts with 'test_'",
+      "summary": "Python test file (role: test)",
+      "summary_text": "Python test file (role: test)",
+      "metrics": {
+        "size_bytes": 24139,
+        "loc": 564,
         "todo_count": 0
       }
     }

@@ -4,7 +4,7 @@ Heuristic summaries of source files based on filenames, extensions, and paths.
 
 Schema Version: 2.0
 
-Total files: 15
+Total files: 21
 
 ## idea_generator/__init__.py
 **Language:** Python  
@@ -29,8 +29,8 @@ Total files: 15
 **Role:** cli  
 **Role Justification:** CLI-related name 'cli'  
 **Summary:** Python command-line interface (role: cli)  
-**Size:** 12.76 KB  
-**LOC:** 307  
+**Size:** 20.31 KB  
+**LOC:** 461  
 **TODOs/FIXMEs:** 0  
 
 ## idea_generator/config.py
@@ -38,8 +38,8 @@ Total files: 15
 **Role:** configuration  
 **Role Justification:** configuration file name 'config'  
 **Summary:** Python configuration file (role: configuration)  
-**Size:** 6.94 KB  
-**LOC:** 177  
+**Size:** 7.69 KB  
+**LOC:** 201  
 **TODOs/FIXMEs:** 0  
 
 ## idea_generator/github_client.py
@@ -51,13 +51,49 @@ Total files: 15
 **LOC:** 219  
 **TODOs/FIXMEs:** 0  
 
+## idea_generator/llm/__init__.py
+**Language:** Python  
+**Role:** module-init  
+**Role Justification:** module initialization file '__init__'  
+**Summary:** Python module initialization (role: module-init)  
+**Size:** 0.71 KB  
+**LOC:** 5  
+**TODOs/FIXMEs:** 0  
+
+## idea_generator/llm/client.py
+**Language:** Python  
+**Role:** implementation  
+**Role Justification:** general implementation file (default classification)  
+**Summary:** Python module for client  
+**Size:** 8.42 KB  
+**LOC:** 181  
+**TODOs/FIXMEs:** 0  
+
 ## idea_generator/models.py
 **Language:** Python  
 **Role:** model  
 **Role Justification:** model/schema name 'models'  
 **Summary:** Python data models (role: model)  
-**Size:** 3.18 KB  
-**LOC:** 63  
+**Size:** 5.19 KB  
+**LOC:** 113  
+**TODOs/FIXMEs:** 0  
+
+## idea_generator/pipelines/__init__.py
+**Language:** Python  
+**Role:** module-init  
+**Role Justification:** module initialization file '__init__'  
+**Summary:** Python module initialization (role: module-init)  
+**Size:** 0.76 KB  
+**LOC:** 5  
+**TODOs/FIXMEs:** 0  
+
+## idea_generator/pipelines/summarize.py
+**Language:** Python  
+**Role:** implementation  
+**Role Justification:** general implementation file (default classification)  
+**Summary:** Python module for summarize  
+**Size:** 14.17 KB  
+**LOC:** 301  
 **TODOs/FIXMEs:** 0  
 
 ## idea_generator/setup.py
@@ -92,8 +128,8 @@ Total files: 15
 **Role:** test  
 **Role Justification:** filename starts with 'test_'  
 **Summary:** Python test file (role: test)  
-**Size:** 8.09 KB  
-**LOC:** 168  
+**Size:** 8.49 KB  
+**LOC:** 175  
 **TODOs/FIXMEs:** 0  
 
 ## tests/test_config.py
@@ -123,13 +159,22 @@ Total files: 15
 **LOC:** 186  
 **TODOs/FIXMEs:** 0  
 
+## tests/test_llm_client.py
+**Language:** Python  
+**Role:** test  
+**Role Justification:** filename starts with 'test_'  
+**Summary:** Python test file (role: test)  
+**Size:** 12.99 KB  
+**LOC:** 265  
+**TODOs/FIXMEs:** 0  
+
 ## tests/test_models.py
 **Language:** Python  
 **Role:** test  
 **Role Justification:** filename starts with 'test_'  
 **Summary:** Python test file (role: test)  
-**Size:** 5.99 KB  
-**LOC:** 142  
+**Size:** 10.76 KB  
+**LOC:** 274  
 **TODOs/FIXMEs:** 0  
 
 ## tests/test_setup.py
@@ -139,4 +184,13 @@ Total files: 15
 **Summary:** Python test file (role: test)  
 **Size:** 14.19 KB  
 **LOC:** 249  
+**TODOs/FIXMEs:** 0  
+
+## tests/test_summarize_pipeline.py
+**Language:** Python  
+**Role:** test  
+**Role Justification:** filename starts with 'test_'  
+**Summary:** Python test file (role: test)  
+**Size:** 23.57 KB  
+**LOC:** 564  
 **TODOs/FIXMEs:** 0  

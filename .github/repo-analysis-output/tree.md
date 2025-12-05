@@ -16,6 +16,14 @@
   └── workflows
     └── af_maintenance.yml
 ├── idea_generator
+  ├── llm
+    ├── prompts
+      └── summarizer.txt
+    ├── __init__.py
+    └── client.py
+  ├── pipelines
+    ├── __init__.py
+    └── summarize.py
   ├── __init__.py
   ├── cleaning.py
   ├── cli.py
@@ -30,8 +38,10 @@
   ├── test_config.py
   ├── test_github_client.py
   ├── test_integration.py
+  ├── test_llm_client.py
   ├── test_models.py
-  └── test_setup.py
+  ├── test_setup.py
+  └── test_summarize_pipeline.py
 ├── .env.example
 ├── .gitignore
 ├── LICENSE
