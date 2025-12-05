@@ -141,9 +141,7 @@ class TestGroupingPipelineInit:
 class TestCreateBatches:
     """Tests for batch creation logic."""
 
-    def test_create_batches_empty_list(
-        self, mock_llm_client: Mock, temp_prompt_file: Path
-    ) -> None:
+    def test_create_batches_empty_list(self, mock_llm_client: Mock, temp_prompt_file: Path) -> None:
         """Test batching with empty input."""
         pipeline = GroupingPipeline(
             llm_client=mock_llm_client,
@@ -494,9 +492,7 @@ class TestGroupBatch:
         }
 
         mock_llm_client.generate.return_value = mock_llm_response
-        mock_llm_client.parse_json_response.return_value = json.loads(
-            mock_llm_response["response"]
-        )
+        mock_llm_client.parse_json_response.return_value = json.loads(mock_llm_response["response"])
 
         clusters = pipeline.group_batch(sample_summaries)
 
@@ -674,9 +670,7 @@ class TestGroupSummaries:
         }
 
         mock_llm_client.generate.return_value = mock_llm_response
-        mock_llm_client.parse_json_response.return_value = json.loads(
-            mock_llm_response["response"]
-        )
+        mock_llm_client.parse_json_response.return_value = json.loads(mock_llm_response["response"])
 
         clusters = pipeline.group_summaries(sample_summaries)
 
@@ -732,9 +726,7 @@ class TestGroupSummaries:
         }
 
         mock_llm_client.generate.return_value = mock_llm_response
-        mock_llm_client.parse_json_response.return_value = json.loads(
-            mock_llm_response["response"]
-        )
+        mock_llm_client.parse_json_response.return_value = json.loads(mock_llm_response["response"])
 
         clusters = pipeline.group_summaries(all_summaries, skip_noise=True)
 
@@ -791,9 +783,7 @@ class TestGroupSummaries:
 
         # Mock responses for each batch
         def generate_response(**kwargs: dict) -> dict:
-            # Extract issue IDs from prompt
-            prompt = kwargs.get("prompt", "")
-            # Return clusters for each issue as singleton
+            # Return empty clusters - simplified for test
             return {
                 "response": json.dumps({"clusters": []}),  # Simplified for test
                 "done": True,

@@ -79,9 +79,7 @@ class GroupingPipeline:
         with open(prompt_template_path, encoding="utf-8") as f:
             self.system_prompt = f.read()
 
-    def _create_batches(
-        self, summaries: list[SummarizedIssue]
-    ) -> list[list[SummarizedIssue]]:
+    def _create_batches(self, summaries: list[SummarizedIssue]) -> list[list[SummarizedIssue]]:
         """
         Create batches of summaries respecting size and character limits.
 
@@ -178,9 +176,7 @@ class GroupingPipeline:
 
         for cluster in clusters:
             # Check for unknown issue IDs
-            unknown_ids = [
-                iid for iid in cluster.member_issue_ids if iid not in valid_issue_ids
-            ]
+            unknown_ids = [iid for iid in cluster.member_issue_ids if iid not in valid_issue_ids]
             if unknown_ids:
                 errors.append(
                     f"Cluster '{cluster.cluster_id}' references unknown issue IDs: {unknown_ids}"
@@ -473,9 +469,7 @@ class GroupingPipeline:
                     cluster_sequence[topic] = seq + 1
                     all_clusters.append(cluster)
 
-                logger.info(
-                    f"Batch {i}/{len(batches)}: Created {len(batch_clusters)} clusters"
-                )
+                logger.info(f"Batch {i}/{len(batches)}: Created {len(batch_clusters)} clusters")
 
             except GroupingError as e:
                 logger.error(f"Failed to process batch {i}/{len(batches)}: {e}")
