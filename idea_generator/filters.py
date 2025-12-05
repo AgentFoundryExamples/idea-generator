@@ -20,11 +20,14 @@ This module provides:
 - Ranking functions for idea clusters
 """
 
-from typing import TypeVar
+from typing import Any, TypeVar
 
 from .models import IdeaCluster
 
 T = TypeVar("T", bound=IdeaCluster)
+
+# Type alias for cluster dictionaries with composite scores
+ClusterDict = dict[str, Any]
 
 
 def compute_composite_score(
@@ -128,7 +131,7 @@ def add_composite_scores(
     weight_feasibility: float = 0.25,
     weight_desirability: float = 0.30,
     weight_attention: float = 0.20,
-) -> list[dict[str, float | str | int | list[int]]]:
+) -> list[ClusterDict]:
     """
     Add composite scores to clusters for serialization.
 

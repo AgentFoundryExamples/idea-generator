@@ -32,6 +32,9 @@ from pathlib import Path
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# Tolerance for weight validation (weights must sum to 1.0 ± this value)
+WEIGHT_SUM_TOLERANCE = 0.01
+
 
 class Config(BaseSettings):
     """
@@ -233,7 +236,7 @@ class Config(BaseSettings):
             + self.ranking_weight_desirability
             + self.ranking_weight_attention
         )
-        if abs(total - 1.0) > 0.01:
+        if abs(total - 1.0) > WEIGHT_SUM_TOLERANCE:
             raise ValueError(
                 f"Ranking weights must sum to 1.0, got {total:.2f}. "
                 "Please adjust weights accordingly."

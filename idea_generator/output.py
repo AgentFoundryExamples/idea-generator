@@ -75,8 +75,7 @@ def generate_json_report(
         member_ids = cluster_dict["member_issue_ids"]
         # Check if any member issue is flagged as noise
         has_noise = any(
-            issue_map.get(issue_id).is_noise if issue_id in issue_map else False
-            for issue_id in member_ids
+            issue_map[issue_id].is_noise for issue_id in member_ids if issue_id in issue_map
         )
         cluster_dict["has_noise_members"] = has_noise
 
