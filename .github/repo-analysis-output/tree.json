@@ -116,6 +116,10 @@
             },
             {
               "type": "file",
+              "name": "orchestrator.py"
+            },
+            {
+              "type": "file",
               "name": "summarize.py"
             }
           ]
@@ -138,11 +142,19 @@
         },
         {
           "type": "file",
+          "name": "filters.py"
+        },
+        {
+          "type": "file",
           "name": "github_client.py"
         },
         {
           "type": "file",
           "name": "models.py"
+        },
+        {
+          "type": "file",
+          "name": "output.py"
         },
         {
           "type": "file",
@@ -172,6 +184,10 @@
         },
         {
           "type": "file",
+          "name": "test_filters.py"
+        },
+        {
+          "type": "file",
           "name": "test_github_client.py"
         },
         {
@@ -189,6 +205,14 @@
         {
           "type": "file",
           "name": "test_models.py"
+        },
+        {
+          "type": "file",
+          "name": "test_orchestrator.py"
+        },
+        {
+          "type": "file",
+          "name": "test_output.py"
         },
         {
           "type": "file",

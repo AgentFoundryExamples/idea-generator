@@ -4,7 +4,7 @@ Heuristic summaries of source files based on filenames, extensions, and paths.
 
 Schema Version: 2.0
 
-Total files: 23
+Total files: 29
 
 ## idea_generator/__init__.py
 **Language:** Python  
@@ -29,8 +29,8 @@ Total files: 23
 **Role:** cli  
 **Role Justification:** CLI-related name 'cli'  
 **Summary:** Python command-line interface (role: cli)  
-**Size:** 28.61 KB  
-**LOC:** 637  
+**Size:** 31.73 KB  
+**LOC:** 707  
 **TODOs/FIXMEs:** 0  
 
 ## idea_generator/config.py
@@ -38,8 +38,17 @@ Total files: 23
 **Role:** configuration  
 **Role Justification:** configuration file name 'config'  
 **Summary:** Python configuration file (role: configuration)  
-**Size:** 8.08 KB  
-**LOC:** 213  
+**Size:** 9.70 KB  
+**LOC:** 259  
+**TODOs/FIXMEs:** 0  
+
+## idea_generator/filters.py
+**Language:** Python  
+**Role:** implementation  
+**Role Justification:** general implementation file (default classification)  
+**Summary:** Python module for filters  
+**Size:** 5.13 KB  
+**LOC:** 117  
 **TODOs/FIXMEs:** 0  
 
 ## idea_generator/github_client.py
@@ -78,6 +87,15 @@ Total files: 23
 **LOC:** 165  
 **TODOs/FIXMEs:** 0  
 
+## idea_generator/output.py
+**Language:** Python  
+**Role:** implementation  
+**Role Justification:** general implementation file (default classification)  
+**Summary:** Python module for output  
+**Size:** 8.43 KB  
+**LOC:** 176  
+**TODOs/FIXMEs:** 0  
+
 ## idea_generator/pipelines/__init__.py
 **Language:** Python  
 **Role:** module-init  
@@ -94,6 +112,15 @@ Total files: 23
 **Summary:** Python module for grouping  
 **Size:** 18.34 KB  
 **LOC:** 374  
+**TODOs/FIXMEs:** 0  
+
+## idea_generator/pipelines/orchestrator.py
+**Language:** Python  
+**Role:** implementation  
+**Role Justification:** general implementation file (default classification)  
+**Summary:** Python module for orchestrator  
+**Size:** 15.87 KB  
+**LOC:** 330  
 **TODOs/FIXMEs:** 0  
 
 ## idea_generator/pipelines/summarize.py
@@ -137,8 +164,8 @@ Total files: 23
 **Role:** test  
 **Role Justification:** filename starts with 'test_'  
 **Summary:** Python test file (role: test)  
-**Size:** 8.49 KB  
-**LOC:** 175  
+**Size:** 8.53 KB  
+**LOC:** 171  
 **TODOs/FIXMEs:** 0  
 
 ## tests/test_config.py
@@ -148,6 +175,15 @@ Total files: 23
 **Summary:** Python test file (role: test)  
 **Size:** 6.89 KB  
 **LOC:** 137  
+**TODOs/FIXMEs:** 0  
+
+## tests/test_filters.py
+**Language:** Python  
+**Role:** test  
+**Role Justification:** filename starts with 'test_'  
+**Summary:** Python test file (role: test)  
+**Size:** 10.34 KB  
+**LOC:** 229  
 **TODOs/FIXMEs:** 0  
 
 ## tests/test_github_client.py
@@ -193,6 +229,24 @@ Total files: 23
 **Summary:** Python test file (role: test)  
 **Size:** 10.76 KB  
 **LOC:** 274  
+**TODOs/FIXMEs:** 0  
+
+## tests/test_orchestrator.py
+**Language:** Python  
+**Role:** test  
+**Role Justification:** filename starts with 'test_'  
+**Summary:** Python test file (role: test)  
+**Size:** 14.75 KB  
+**LOC:** 325  
+**TODOs/FIXMEs:** 0  
+
+## tests/test_output.py
+**Language:** Python  
+**Role:** test  
+**Role Justification:** filename starts with 'test_'  
+**Summary:** Python test file (role: test)  
+**Size:** 16.14 KB  
+**LOC:** 396  
 **TODOs/FIXMEs:** 0  
 
 ## tests/test_setup.py

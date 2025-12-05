@@ -25,24 +25,30 @@
   ├── pipelines
     ├── __init__.py
     ├── grouping.py
+    ├── orchestrator.py
     └── summarize.py
   ├── __init__.py
   ├── cleaning.py
   ├── cli.py
   ├── config.py
+  ├── filters.py
   ├── github_client.py
   ├── models.py
+  ├── output.py
   └── setup.py
 ├── tests
   ├── __init__.py
   ├── test_cleaning.py
   ├── test_cli.py
   ├── test_config.py
+  ├── test_filters.py
   ├── test_github_client.py
   ├── test_grouping_pipeline.py
   ├── test_integration.py
   ├── test_llm_client.py
   ├── test_models.py
+  ├── test_orchestrator.py
+  ├── test_output.py
   ├── test_setup.py
   └── test_summarize_pipeline.py
 ├── .env.example

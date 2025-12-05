@@ -1,6 +1,6 @@
 {
   "schema_version": "2.0",
-  "total_files": 23,
+  "total_files": 29,
   "files": [
     {
       "schema_version": "2.0",
@@ -39,8 +39,8 @@
       "summary": "Python command-line interface (role: cli)",
       "summary_text": "Python command-line interface (role: cli)",
       "metrics": {
-        "size_bytes": 29292,
-        "loc": 637,
+        "size_bytes": 32490,
+        "loc": 707,
         "todo_count": 0
       }
     },
@@ -53,8 +53,22 @@
       "summary": "Python configuration file (role: configuration)",
       "summary_text": "Python configuration file (role: configuration)",
       "metrics": {
-        "size_bytes": 8273,
-        "loc": 213,
+        "size_bytes": 9933,
+        "loc": 259,
+        "todo_count": 0
+      }
+    },
+    {
+      "schema_version": "2.0",
+      "path": "idea_generator/filters.py",
+      "language": "Python",
+      "role": "implementation",
+      "role_justification": "general implementation file (default classification)",
+      "summary": "Python module for filters",
+      "summary_text": "Python module for filters",
+      "metrics": {
+        "size_bytes": 5251,
+        "loc": 117,
         "todo_count": 0
       }
     },
@@ -116,6 +130,20 @@
     },
     {
       "schema_version": "2.0",
+      "path": "idea_generator/output.py",
+      "language": "Python",
+      "role": "implementation",
+      "role_justification": "general implementation file (default classification)",
+      "summary": "Python module for output",
+      "summary_text": "Python module for output",
+      "metrics": {
+        "size_bytes": 8635,
+        "loc": 176,
+        "todo_count": 0
+      }
+    },
+    {
+      "schema_version": "2.0",
       "path": "idea_generator/pipelines/__init__.py",
       "language": "Python",
       "role": "module-init",
@@ -139,6 +167,20 @@
       "metrics": {
         "size_bytes": 18779,
         "loc": 374,
+        "todo_count": 0
+      }
+    },
+    {
+      "schema_version": "2.0",
+      "path": "idea_generator/pipelines/orchestrator.py",
+      "language": "Python",
+      "role": "implementation",
+      "role_justification": "general implementation file (default classification)",
+      "summary": "Python module for orchestrator",
+      "summary_text": "Python module for orchestrator",
+      "metrics": {
+        "size_bytes": 16249,
+        "loc": 330,
         "todo_count": 0
       }
     },
@@ -207,8 +249,8 @@
       "summary": "Python test file (role: test)",
       "summary_text": "Python test file (role: test)",
       "metrics": {
-        "size_bytes": 8690,
-        "loc": 175,
+        "size_bytes": 8734,
+        "loc": 171,
         "todo_count": 0
       }
     },
@@ -223,6 +265,20 @@
       "metrics": {
         "size_bytes": 7056,
         "loc": 137,
+        "todo_count": 0
+      }
+    },
+    {
+      "schema_version": "2.0",
+      "path": "tests/test_filters.py",
+      "language": "Python",
+      "role": "test",
+      "role_justification": "filename starts with 'test_'",
+      "summary": "Python test file (role: test)",
+      "summary_text": "Python test file (role: test)",
+      "metrics": {
+        "size_bytes": 10586,
+        "loc": 229,
         "todo_count": 0
       }
     },
@@ -293,6 +349,34 @@
       "metrics": {
         "size_bytes": 11014,
         "loc": 274,
+        "todo_count": 0
+      }
+    },
+    {
+      "schema_version": "2.0",
+      "path": "tests/test_orchestrator.py",
+      "language": "Python",
+      "role": "test",
+      "role_justification": "filename starts with 'test_'",
+      "summary": "Python test file (role: test)",
+      "summary_text": "Python test file (role: test)",
+      "metrics": {
+        "size_bytes": 15107,
+        "loc": 325,
+        "todo_count": 0
+      }
+    },
+    {
+      "schema_version": "2.0",
+      "path": "tests/test_output.py",
+      "language": "Python",
+      "role": "test",
+      "role_justification": "filename starts with 'test_'",
+      "summary": "Python test file (role: test)",
+      "summary_text": "Python test file (role: test)",
+      "metrics": {
+        "size_bytes": 16529,
+        "loc": 396,
         "todo_count": 0
       }
     },
