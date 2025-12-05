@@ -439,6 +439,7 @@ def summarize(
                 prompt_template_path=prompt_path,
                 max_tokens=config.summarization_max_tokens,
                 cache_dir=cache_dir,
+                cache_max_file_size=config.cache_max_file_size,
             )
         except SummarizationError as e:
             typer.echo(f"Error initializing pipeline: {e}", err=True)

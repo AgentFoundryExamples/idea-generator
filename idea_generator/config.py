@@ -144,6 +144,12 @@ class Config(BaseSettings):
         ge=1000,
         le=16000,
     )
+    cache_max_file_size: int = Field(
+        default=1_000_000,
+        description="Maximum cache file size in bytes (default: 1MB)",
+        ge=100_000,
+        le=10_000_000,
+    )
 
     # Directory configuration
     output_dir: Path = Field(

@@ -56,6 +56,7 @@ class SummarizationPipeline:
         prompt_template_path: Path,
         max_tokens: int = 4000,
         cache_dir: Path | None = None,
+        cache_max_file_size: int = 1_000_000,
     ) -> None:
         """
         Initialize the summarization pipeline.
@@ -66,11 +67,13 @@ class SummarizationPipeline:
             prompt_template_path: Path to the system prompt template file
             max_tokens: Maximum tokens for issue text (rough estimate: ~4 chars/token)
             cache_dir: Directory for caching successful summaries (optional)
+            cache_max_file_size: Maximum cache file size in bytes (default: 1MB)
         """
         self.llm_client = llm_client
         self.model = model
         self.max_tokens = max_tokens
         self.cache_dir = cache_dir
+        self.cache_max_file_size = cache_max_file_size
 
         # Load system prompt
         if not prompt_template_path.exists():
@@ -100,15 +103,14 @@ class SummarizationPipeline:
 
         # Ensure the resolved path is within cache_dir (prevent path traversal)
         try:
-            cache_path = cache_path.resolve()
-            self.cache_dir.resolve()
-            if not str(cache_path).startswith(str(self.cache_dir.resolve())):
-                raise ValueError(f"Cache path outside cache directory: {cache_path}")
+            cache_path_resolved = cache_path.resolve()
+            cache_dir_resolved = self.cache_dir.resolve()
+            if not str(cache_path_resolved).startswith(str(cache_dir_resolved)):
+                raise ValueError(f"Cache path outside cache directory: {cache_path_resolved}")
+            return cache_path_resolved
         except (ValueError, OSError) as e:
             logger.error(f"Invalid cache path for issue {issue_id}: {e}")
             return None
-
-        return cache_path
 
     def _load_from_cache(self, issue_id: int) -> SummarizedIssue | None:
         """
@@ -127,8 +129,11 @@ class SummarizationPipeline:
         try:
             # Limit file size to prevent DoS attacks
             file_size = cache_path.stat().st_size
-            if file_size > 1_000_000:  # 1MB max
-                logger.warning(f"Cache file too large for issue {issue_id}: {file_size} bytes")
+            if file_size > self.cache_max_file_size:
+                logger.warning(
+                    f"Cache file too large for issue {issue_id}: {file_size} bytes "
+                    f"(max: {self.cache_max_file_size})"
+                )
                 return None
 
             with open(cache_path, encoding="utf-8") as f:
