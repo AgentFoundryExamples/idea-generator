@@ -125,6 +125,32 @@ class Config(BaseSettings):
         description="Enable noise/spam filtering for issues",
     )
 
+    # LLM/Summarization configuration
+    llm_timeout: float = Field(
+        default=120.0,
+        description="LLM request timeout in seconds (suitable for 3-8B models)",
+        ge=10.0,
+        le=600.0,
+    )
+    llm_max_retries: int = Field(
+        default=3,
+        description="Maximum number of retries for LLM requests",
+        ge=0,
+        le=10,
+    )
+    summarization_max_tokens: int = Field(
+        default=4000,
+        description="Maximum tokens for issue text in summarization (rough estimate: 4 chars/token)",
+        ge=1000,
+        le=16000,
+    )
+    cache_max_file_size: int = Field(
+        default=1_000_000,
+        description="Maximum cache file size in bytes (default: 1MB)",
+        ge=100_000,
+        le=10_000_000,
+    )
+
     # Directory configuration
     output_dir: Path = Field(
         default=Path("output"),

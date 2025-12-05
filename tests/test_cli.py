@@ -27,6 +27,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import tempfile
+from pathlib import Path
 from unittest.mock import patch
 
 from typer.testing import CliRunner
@@ -159,28 +161,35 @@ class TestSummarizeCommand:
         """Test summarize command help."""
         result = runner.invoke(app, ["summarize", "--help"])
         assert result.exit_code == 0
-        assert "Summarize ingested repository data" in result.stdout
+        assert "Summarize normalized issues" in result.stdout
 
     def test_summarize_placeholder(self) -> None:
-        """Test summarize command shows placeholder message."""
+        """Test summarize command requires repo configuration."""
         result = runner.invoke(app, ["summarize"])
-        assert result.exit_code == 0
-        assert "Summarizing repository data" in result.stdout
-        assert "not yet implemented" in result.stdout
+        assert result.exit_code == 1
+        assert "GitHub repository not configured" in result.stdout
 
     def test_summarize_with_directories(self) -> None:
         """Test summarize with custom directories."""
-        result = runner.invoke(
-            app,
-            [
-                "summarize",
-                "--data-dir",
-                "/custom/data",
-                "--output-dir",
-                "/custom/output",
-            ],
-        )
-        assert result.exit_code == 0
+        with tempfile.TemporaryDirectory() as tmpdir:
+            data_dir = Path(tmpdir) / "data"
+            output_dir = Path(tmpdir) / "output"
+
+            result = runner.invoke(
+                app,
+                [
+                    "summarize",
+                    "--github-repo",
+                    "owner/repo",
+                    "--data-dir",
+                    str(data_dir),
+                    "--output-dir",
+                    str(output_dir),
+                ],
+            )
+            # Will fail because issues file doesn't exist, but checks CLI parsing
+            assert result.exit_code == 1
+            assert "Normalized issues file not found" in result.stdout
 
 
 class TestRunCommand:

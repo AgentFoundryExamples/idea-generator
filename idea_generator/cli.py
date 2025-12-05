@@ -304,26 +304,223 @@ def ingest(
 
 @app.command()
 def summarize(
+    github_repo: GithubRepoOption = None,
     data_dir: DataDirOption = None,
     output_dir: OutputDirOption = None,
+    ollama_host: OllamaHostOption = None,
+    ollama_port: OllamaPortOption = None,
+    model_innovator: ModelInnovatorOption = None,
+    skip_cache: Annotated[
+        bool,
+        typer.Option("--skip-cache", help="Skip cache and regenerate all summaries"),
+    ] = False,
+    skip_noise: Annotated[
+        bool,
+        typer.Option("--skip-noise", help="Skip issues already flagged as noise"),
+    ] = False,
 ) -> None:
     """
-    Summarize ingested repository data.
+    Summarize normalized issues using the LLM summarizer persona.
 
-    This command will be implemented in a future iteration to:
-    - Process ingested repository data
-    - Generate summaries and insights
-    - Prepare data for idea generation
+    This command:
+    - Loads normalized issues from the data directory
+    - Processes each issue sequentially through the summarizer LLM
+    - Generates structured summaries with quantitative metrics
+    - Caches results to avoid redundant API calls
+    - Saves summarized issues to the output directory
+
+    The summarizer uses a 3-8B parameter model (e.g., llama3.2) running locally
+    through Ollama. Each issue is processed independently to avoid context ballooning.
+
+    Metrics generated:
+    - Novelty (0.0-1.0): How innovative or unique is this idea
+    - Feasibility (0.0-1.0): How practical to implement
+    - Desirability (0.0-1.0): How valuable to users
+    - Attention (0.0-1.0): Community engagement level
     """
-    config = load_config(
-        data_dir=data_dir,
-        output_dir=output_dir,
-    )
-    typer.echo("Summarizing repository data...")
-    typer.echo(f"Data directory: {config.data_dir}")
-    typer.echo(f"Output directory: {config.output_dir}")
-    typer.echo("\n⚠ This command is not yet implemented.")
-    typer.echo("This is a placeholder for future development.")
+    from pathlib import Path
+
+    from .llm.client import OllamaClient, OllamaError
+    from .pipelines.summarize import SummarizationError, SummarizationPipeline
+
+    try:
+        config = load_config(
+            github_repo=github_repo,
+            data_dir=data_dir,
+            output_dir=output_dir,
+            ollama_host=ollama_host,
+            ollama_port=ollama_port,
+            model_innovator=model_innovator,
+        )
+
+        # Validate required configuration
+        if not config.github_repo:
+            typer.echo(
+                "Error: GitHub repository not configured.\n"
+                "Provide via --github-repo or set IDEA_GEN_GITHUB_REPO in .env",
+                err=True,
+            )
+            raise typer.Exit(code=1)
+
+        # Parse owner/repo
+        try:
+            owner, repo = config.github_repo.split("/")
+        except ValueError:
+            typer.echo(
+                f"Error: Invalid repository format '{config.github_repo}'. "
+                "Expected format: 'owner/repo'",
+                err=True,
+            )
+            raise typer.Exit(code=1) from None
+
+        typer.echo(f"Summarizing issues from {config.github_repo}...")
+        typer.echo(f"Data directory: {config.data_dir}")
+        typer.echo(f"Output directory: {config.output_dir}")
+        typer.echo(f"Model: {config.model_innovator}")
+        typer.echo(f"Ollama endpoint: {config.ollama_base_url}\n")
+
+        # Ensure directories exist
+        config.ensure_directories()
+
+        # Load normalized issues
+        issues_file = config.data_dir / f"{owner}_{repo}_issues.json"
+        if not issues_file.exists():
+            typer.echo(
+                f"Error: Normalized issues file not found: {issues_file}\n"
+                "Please run 'idea-generator ingest' first.",
+                err=True,
+            )
+            raise typer.Exit(code=1)
+
+        typer.echo(f"Loading issues from {issues_file}...")
+        with open(issues_file, encoding="utf-8") as f:
+            issues_data = json.load(f)
+
+        issues = [NormalizedIssue(**issue_data) for issue_data in issues_data]
+        typer.echo(f"✓ Loaded {len(issues)} issues\n")
+
+        if not issues:
+            typer.echo("No issues to summarize.")
+            return
+
+        # Initialize Ollama client
+        typer.echo("Connecting to Ollama server...")
+        try:
+            llm_client = OllamaClient(
+                base_url=config.ollama_base_url,
+                timeout=config.llm_timeout,
+                max_retries=config.llm_max_retries,
+            )
+
+            if not llm_client.check_health():
+                typer.echo(
+                    f"Error: Unable to connect to Ollama server at {config.ollama_base_url}\n"
+                    "Please ensure Ollama is running:\n"
+                    "  - Start server with: ollama serve\n"
+                    "  - Or check if running on a different port",
+                    err=True,
+                )
+                raise typer.Exit(code=1)
+
+            typer.echo(f"✓ Connected to Ollama at {config.ollama_base_url}\n")
+
+        except OllamaError as e:
+            typer.echo(f"Error connecting to Ollama: {e}", err=True)
+            raise typer.Exit(code=1) from e
+
+        # Initialize summarization pipeline
+        prompt_path = Path(__file__).parent / "llm" / "prompts" / "summarizer.txt"
+        cache_dir = config.output_dir / "summarization_cache"
+
+        try:
+            pipeline = SummarizationPipeline(
+                llm_client=llm_client,
+                model=config.model_innovator,
+                prompt_template_path=prompt_path,
+                max_tokens=config.summarization_max_tokens,
+                cache_dir=cache_dir,
+                cache_max_file_size=config.cache_max_file_size,
+            )
+        except SummarizationError as e:
+            typer.echo(f"Error initializing pipeline: {e}", err=True)
+            raise typer.Exit(code=1) from e
+
+        # Summarize issues
+        typer.echo("Processing issues through summarizer persona...")
+        typer.echo(f"Configuration: skip_cache={skip_cache}, skip_noise={skip_noise}\n")
+
+        try:
+            summaries = pipeline.summarize_issues(
+                issues, skip_cache=skip_cache, skip_noise=skip_noise
+            )
+        except Exception as e:
+            typer.echo(f"Error during summarization: {e}", err=True)
+            raise typer.Exit(code=1) from e
+        finally:
+            llm_client.close()
+
+        if not summaries:
+            typer.echo("No summaries generated.")
+            return
+
+        # Save summaries
+        output_file = config.output_dir / f"{owner}_{repo}_summaries.json"
+        typer.echo(f"\nSaving summaries to {output_file}...")
+
+        with open(output_file, "w", encoding="utf-8") as f:
+            json.dump(
+                [summary.model_dump(mode="json") for summary in summaries],
+                f,
+                indent=2,
+                ensure_ascii=False,
+            )
+
+        typer.echo(f"✓ Saved {len(summaries)} summaries\n")
+
+        # Summary statistics
+        avg_novelty = sum(s.novelty for s in summaries) / len(summaries)
+        avg_feasibility = sum(s.feasibility for s in summaries) / len(summaries)
+        avg_desirability = sum(s.desirability for s in summaries) / len(summaries)
+        noise_count = sum(1 for s in summaries if s.noise_flag)
+
+        typer.echo("✅ Summarization completed successfully!\n")
+        typer.echo("Summary Statistics:")
+        typer.echo(f"  - Total summaries: {len(summaries)}")
+        typer.echo(f"  - Flagged as noise: {noise_count}")
+        typer.echo(f"  - Average novelty: {avg_novelty:.2f}")
+        typer.echo(f"  - Average feasibility: {avg_feasibility:.2f}")
+        typer.echo(f"  - Average desirability: {avg_desirability:.2f}")
+        typer.echo(f"\nOutput: {output_file}")
+        typer.echo(f"Cache: {cache_dir}")
+
+    except ValueError as e:
+        # Configuration or validation errors
+        typer.echo(f"Configuration error: {e}", err=True)
+        raise typer.Exit(code=1) from e
+    except FileNotFoundError as e:
+        # Missing files
+        typer.echo(f"File not found: {e}", err=True)
+        raise typer.Exit(code=1) from e
+    except PermissionError as e:
+        # Permission issues
+        typer.echo(f"Permission denied: {e}", err=True)
+        raise typer.Exit(code=1) from e
+    except json.JSONDecodeError as e:
+        # Invalid JSON in issues file
+        typer.echo(f"Invalid JSON in issues file: {e}", err=True)
+        raise typer.Exit(code=1) from e
+    except OllamaError as e:
+        # LLM/Ollama specific errors
+        typer.echo(f"Ollama error: {e}", err=True)
+        raise typer.Exit(code=1) from e
+    except SummarizationError as e:
+        # Summarization pipeline errors
+        typer.echo(f"Summarization error: {e}", err=True)
+        raise typer.Exit(code=1) from e
+    except Exception as e:
+        # Unexpected errors
+        typer.echo(f"Unexpected error during summarization: {e}", err=True)
+        raise typer.Exit(code=1) from e
 
 
 @app.command()
