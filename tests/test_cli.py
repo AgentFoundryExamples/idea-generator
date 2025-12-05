@@ -113,20 +113,30 @@ class TestIngestCommand:
         """Test ingest command help."""
         result = runner.invoke(app, ["ingest", "--help"])
         assert result.exit_code == 0
-        assert "Ingest data from a GitHub repository" in result.stdout
+        assert "Ingest open issues from a GitHub repository" in result.stdout
 
-    def test_ingest_placeholder(self) -> None:
-        """Test ingest command shows placeholder message."""
+    def test_ingest_requires_github_repo(self) -> None:
+        """Test ingest command requires GitHub repo."""
         result = runner.invoke(app, ["ingest"])
-        assert result.exit_code == 0
-        assert "Ingesting repository data" in result.stdout
-        assert "not yet implemented" in result.stdout
+        assert result.exit_code == 1
+        assert "GitHub repository not configured" in result.stdout
 
     def test_ingest_with_github_repo(self) -> None:
         """Test ingest with GitHub repo argument."""
-        result = runner.invoke(app, ["ingest", "--github-repo", "owner/repo"])
-        assert result.exit_code == 0
-        assert "owner/repo" in result.stdout
+        from unittest.mock import MagicMock, patch
+
+        with patch("idea_generator.cli.GitHubClient") as mock_client_class:
+            mock_client = MagicMock()
+            mock_client.__enter__ = MagicMock(return_value=mock_client)
+            mock_client.__exit__ = MagicMock(return_value=False)
+            mock_client.check_repository_access = MagicMock(return_value=True)
+            mock_client.fetch_issues = MagicMock(return_value=[])
+            mock_client_class.return_value = mock_client
+
+            result = runner.invoke(app, ["ingest", "--github-repo", "owner/repo"])
+            assert result.exit_code == 0
+            assert "owner/repo" in result.stdout
+            assert "No open issues found" in result.stdout
 
 
 class TestSummarizeCommand:

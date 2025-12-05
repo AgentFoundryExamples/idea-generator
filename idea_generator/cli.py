@@ -14,12 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import json
 from pathlib import Path
 from typing import Annotated
 
 import typer
 
+from .cleaning import normalize_github_issue
 from .config import load_config
+from .github_client import GitHubAPIError, GitHubClient
+from .models import NormalizedIssue
 from .setup import SetupError, run_setup
 
 app = typer.Typer(
@@ -134,23 +138,154 @@ def ingest(
     data_dir: DataDirOption = None,
 ) -> None:
     """
-    Ingest data from a GitHub repository.
+    Ingest open issues from a GitHub repository.
 
-    This command will be implemented in a future iteration to:
-    - Clone or fetch the specified GitHub repository
-    - Extract relevant information (issues, PRs, code structure)
-    - Store processed data for later analysis
+    This command:
+    - Fetches all open issues with pagination
+    - Retrieves comment threads for each issue
+    - Normalizes and cleans the data
+    - Applies noise filtering
+    - Saves normalized JSON to the data directory
     """
-    config = load_config(
-        github_repo=github_repo,
-        github_token=github_token,
-        data_dir=data_dir,
-    )
-    typer.echo("Ingesting repository data...")
-    typer.echo(f"Repository: {config.github_repo or 'Not configured'}")
-    typer.echo(f"Data directory: {config.data_dir}")
-    typer.echo("\n⚠ This command is not yet implemented.")
-    typer.echo("This is a placeholder for future development.")
+    try:
+        config = load_config(
+            github_repo=github_repo,
+            github_token=github_token,
+            data_dir=data_dir,
+        )
+
+        # Validate required configuration
+        if not config.github_repo:
+            typer.echo(
+                "Error: GitHub repository not configured.\n"
+                "Provide via --github-repo or set IDEA_GEN_GITHUB_REPO in .env",
+                err=True,
+            )
+            raise typer.Exit(code=1)
+
+        # Parse owner/repo
+        try:
+            owner, repo = config.github_repo.split("/")
+        except ValueError:
+            typer.echo(
+                f"Error: Invalid repository format '{config.github_repo}'. "
+                "Expected format: 'owner/repo'",
+                err=True,
+            )
+            raise typer.Exit(code=1) from None
+
+        typer.echo(f"Ingesting issues from {config.github_repo}...")
+        typer.echo(f"Data directory: {config.data_dir}\n")
+
+        # Ensure data directory exists
+        config.ensure_directories()
+
+        # Setup cache directory for raw responses
+        cache_dir = config.data_dir / "cache"
+        cache_dir.mkdir(exist_ok=True)
+
+        # Initialize GitHub client
+        with GitHubClient(
+            token=config.github_token,
+            per_page=config.github_per_page,
+            max_retries=config.github_max_retries,
+            cache_dir=cache_dir,
+        ) as client:
+            # Check repository access
+            typer.echo("Checking repository access...")
+            try:
+                if not client.check_repository_access(owner, repo):
+                    typer.echo(
+                        f"Error: Repository '{config.github_repo}' not found or not accessible.\n"
+                        "For private repositories, ensure IDEA_GEN_GITHUB_TOKEN is set with "
+                        "'repo' scope.",
+                        err=True,
+                    )
+                    raise typer.Exit(code=1)
+                typer.echo("✓ Repository accessible\n")
+            except GitHubAPIError as e:
+                typer.echo(f"Error checking repository access: {e}", err=True)
+                raise typer.Exit(code=1) from e
+
+            # Fetch issues
+            typer.echo("Fetching open issues...")
+            try:
+                issues = client.fetch_issues(owner, repo, state="open")
+                typer.echo(f"✓ Found {len(issues)} open issues\n")
+            except GitHubAPIError as e:
+                typer.echo(f"Error fetching issues: {e}", err=True)
+                raise typer.Exit(code=1) from e
+
+            if not issues:
+                typer.echo("No open issues found. Nothing to ingest.")
+                return
+
+            # Process each issue
+            typer.echo("Processing issues and comments...")
+            normalized_issues: list[NormalizedIssue] = []
+            noise_count = 0
+            truncated_count = 0
+
+            for i, issue_data in enumerate(issues, 1):
+                issue_number = issue_data["number"]
+                typer.echo(f"  [{i}/{len(issues)}] Issue #{issue_number}...", nl=False)
+
+                # Fetch comments
+                try:
+                    comments = client.fetch_issue_comments(owner, repo, issue_number)
+                except GitHubAPIError as e:
+                    typer.echo(f" ⚠ Warning: Failed to fetch comments: {e}")
+                    comments = []
+
+                # Normalize issue
+                normalized = normalize_github_issue(
+                    issue_data,
+                    comments,
+                    max_text_length=config.max_text_length,
+                    noise_filter_enabled=config.noise_filter_enabled,
+                )
+                normalized_issues.append(normalized)
+
+                # Track metrics
+                if normalized.is_noise:
+                    noise_count += 1
+                if normalized.truncated:
+                    truncated_count += 1
+
+                typer.echo(" ✓")
+
+            typer.echo(f"\n✓ Processed {len(normalized_issues)} issues")
+            typer.echo(f"  - Flagged as noise: {noise_count}")
+            typer.echo(f"  - Truncated: {truncated_count}\n")
+
+            # Save to JSON
+            output_file = config.data_dir / f"{owner}_{repo}_issues.json"
+            typer.echo(f"Saving normalized issues to {output_file}...")
+
+            with open(output_file, "w", encoding="utf-8") as f:
+                json.dump(
+                    [issue.model_dump(mode="json") for issue in normalized_issues],
+                    f,
+                    indent=2,
+                    ensure_ascii=False,
+                )
+
+            typer.echo(f"✓ Saved {len(normalized_issues)} issues\n")
+
+            # Summary
+            typer.echo("✅ Ingestion completed successfully!")
+            typer.echo(f"\nOutput: {output_file}")
+            typer.echo(f"Cache: {cache_dir}")
+
+            if noise_count > 0:
+                typer.echo(
+                    f"\nNote: {noise_count} issues were flagged as noise. "
+                    "They are included in the output but marked with 'is_noise: true'."
+                )
+
+    except Exception as e:
+        typer.echo(f"Unexpected error during ingestion: {e}", err=True)
+        raise typer.Exit(code=1) from e
 
 
 @app.command()
