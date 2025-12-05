@@ -8,32 +8,37 @@ Includes classification of external dependencies as stdlib vs third-party.
 
 ## Statistics
 
-- **Total files**: 8
-- **Intra-repo dependencies**: 5
-- **External stdlib dependencies**: 9
-- **External third-party dependencies**: 9
+- **Total files**: 15
+- **Intra-repo dependencies**: 11
+- **External stdlib dependencies**: 13
+- **External third-party dependencies**: 10
 
 ## External Dependencies
 
 ### Standard Library / Core Modules
 
-Total: 9 unique modules
+Total: 13 unique modules
 
+- `datetime.datetime`
 - `json`
 - `os`
 - `pathlib.Path`
+- `re`
 - `shutil`
 - `subprocess`
 - `tempfile`
+- `time`
 - `typing.Annotated`
+- `typing.Any`
 - `unittest.mock.MagicMock`
 - `unittest.mock.patch`
 
 ### Third-Party Packages
 
-Total: 9 unique packages
+Total: 10 unique packages
 
 - `httpx`
+- `pydantic.BaseModel`
 - `pydantic.Field`
 - `pydantic.ValidationError`
 - `pydantic.field_validator`
@@ -45,12 +50,19 @@ Total: 9 unique packages
 
 ## Most Depended Upon Files (Intra-Repo)
 
+- `idea_generator/models.py` (2 dependents)
+- `idea_generator/cli.py` (2 dependents)
 - `idea_generator/setup.py` (2 dependents)
 - `idea_generator/config.py` (2 dependents)
-- `idea_generator/cli.py` (1 dependents)
+- `idea_generator/github_client.py` (2 dependents)
+- `idea_generator/cleaning.py` (1 dependents)
 
 ## Files with Most Dependencies (Intra-Repo)
 
+- `tests/test_cleaning.py` (2 dependencies)
 - `tests/test_cli.py` (2 dependencies)
+- `tests/test_integration.py` (2 dependencies)
 - `tests/test_setup.py` (2 dependencies)
 - `tests/test_config.py` (1 dependencies)
+- `tests/test_github_client.py` (1 dependencies)
+- `tests/test_models.py` (1 dependencies)

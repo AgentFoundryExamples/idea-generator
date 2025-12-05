@@ -10,11 +10,25 @@
       }
     },
     {
+      "id": "idea_generator/cleaning.py",
+      "path": "idea_generator/cleaning.py",
+      "type": "file",
+      "external_dependencies": {
+        "stdlib": [
+          "datetime.datetime",
+          "re",
+          "typing.Any"
+        ],
+        "third-party": []
+      }
+    },
+    {
       "id": "idea_generator/cli.py",
       "path": "idea_generator/cli.py",
       "type": "file",
       "external_dependencies": {
         "stdlib": [
+          "json",
           "pathlib.Path",
           "typing.Annotated"
         ],
@@ -36,6 +50,36 @@
           "pydantic.field_validator",
           "pydantic_settings.BaseSettings",
           "pydantic_settings.SettingsConfigDict"
+        ]
+      }
+    },
+    {
+      "id": "idea_generator/github_client.py",
+      "path": "idea_generator/github_client.py",
+      "type": "file",
+      "external_dependencies": {
+        "stdlib": [
+          "json",
+          "pathlib.Path",
+          "time",
+          "typing.Any"
+        ],
+        "third-party": [
+          "httpx"
+        ]
+      }
+    },
+    {
+      "id": "idea_generator/models.py",
+      "path": "idea_generator/models.py",
+      "type": "file",
+      "external_dependencies": {
+        "stdlib": [
+          "datetime.datetime"
+        ],
+        "third-party": [
+          "pydantic.BaseModel",
+          "pydantic.Field"
         ]
       }
     },
@@ -66,11 +110,25 @@
       }
     },
     {
+      "id": "tests/test_cleaning.py",
+      "path": "tests/test_cleaning.py",
+      "type": "file",
+      "external_dependencies": {
+        "stdlib": [
+          "datetime.datetime"
+        ],
+        "third-party": [
+          "pytest"
+        ]
+      }
+    },
+    {
       "id": "tests/test_cli.py",
       "path": "tests/test_cli.py",
       "type": "file",
       "external_dependencies": {
         "stdlib": [
+          "unittest.mock.MagicMock",
           "unittest.mock.patch"
         ],
         "third-party": [
@@ -95,6 +153,52 @@
       }
     },
     {
+      "id": "tests/test_github_client.py",
+      "path": "tests/test_github_client.py",
+      "type": "file",
+      "external_dependencies": {
+        "stdlib": [
+          "json",
+          "pathlib.Path",
+          "tempfile",
+          "unittest.mock.MagicMock",
+          "unittest.mock.patch"
+        ],
+        "third-party": [
+          "httpx",
+          "pytest"
+        ]
+      }
+    },
+    {
+      "id": "tests/test_integration.py",
+      "path": "tests/test_integration.py",
+      "type": "file",
+      "external_dependencies": {
+        "stdlib": [
+          "json",
+          "pathlib.Path",
+          "tempfile",
+          "unittest.mock.MagicMock",
+          "unittest.mock.patch"
+        ],
+        "third-party": [
+          "typer.testing.CliRunner"
+        ]
+      }
+    },
+    {
+      "id": "tests/test_models.py",
+      "path": "tests/test_models.py",
+      "type": "file",
+      "external_dependencies": {
+        "stdlib": [
+          "datetime.datetime"
+        ],
+        "third-party": []
+      }
+    },
+    {
       "id": "tests/test_setup.py",
       "path": "tests/test_setup.py",
       "type": "file",
@@ -115,6 +219,14 @@
   ],
   "edges": [
     {
+      "source": "tests/test_cleaning.py",
+      "target": "idea_generator/cleaning.py"
+    },
+    {
+      "source": "tests/test_cleaning.py",
+      "target": "idea_generator/models.py"
+    },
+    {
       "source": "tests/test_cli.py",
       "target": "idea_generator/cli.py"
     },
@@ -127,6 +239,22 @@
       "target": "idea_generator/config.py"
     },
     {
+      "source": "tests/test_github_client.py",
+      "target": "idea_generator/github_client.py"
+    },
+    {
+      "source": "tests/test_integration.py",
+      "target": "idea_generator/cli.py"
+    },
+    {
+      "source": "tests/test_integration.py",
+      "target": "idea_generator/github_client.py"
+    },
+    {
+      "source": "tests/test_models.py",
+      "target": "idea_generator/models.py"
+    },
+    {
       "source": "tests/test_setup.py",
       "target": "idea_generator/config.py"
     },
@@ -137,18 +265,23 @@
   ],
   "external_dependencies_summary": {
     "stdlib": [
+      "datetime.datetime",
       "json",
       "os",
       "pathlib.Path",
+      "re",
       "shutil",
       "subprocess",
       "tempfile",
+      "time",
       "typing.Annotated",
+      "typing.Any",
       "unittest.mock.MagicMock",
       "unittest.mock.patch"
     ],
     "third-party": [
       "httpx",
+      "pydantic.BaseModel",
       "pydantic.Field",
       "pydantic.ValidationError",
       "pydantic.field_validator",
@@ -158,7 +291,7 @@
       "typer",
       "typer.testing.CliRunner"
     ],
-    "stdlib_count": 9,
-    "third-party_count": 9
+    "stdlib_count": 13,
+    "third-party_count": 10
   }
 }

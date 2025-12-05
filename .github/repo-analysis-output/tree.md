@@ -8,6 +8,8 @@
   ├── repo-analysis-output
     ├── dependencies.json
     ├── dependencies.md
+    ├── file-summaries.json
+    ├── file-summaries.md
     ├── SUMMARY.md
     ├── tree.json
     └── tree.md
@@ -15,13 +17,20 @@
     └── af_maintenance.yml
 ├── idea_generator
   ├── __init__.py
+  ├── cleaning.py
   ├── cli.py
   ├── config.py
+  ├── github_client.py
+  ├── models.py
   └── setup.py
 ├── tests
   ├── __init__.py
+  ├── test_cleaning.py
   ├── test_cli.py
   ├── test_config.py
+  ├── test_github_client.py
+  ├── test_integration.py
+  ├── test_models.py
   └── test_setup.py
 ├── .env.example
 ├── .gitignore
