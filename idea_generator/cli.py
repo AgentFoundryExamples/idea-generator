@@ -754,37 +754,121 @@ def run(
     ollama_host: OllamaHostOption = None,
     ollama_port: OllamaPortOption = None,
     model_innovator: ModelInnovatorOption = None,
-    model_critic: ModelCriticOption = None,
     output_dir: OutputDirOption = None,
     data_dir: DataDirOption = None,
-    persona_dir: PersonaDirOption = None,
+    force: Annotated[
+        bool,
+        typer.Option("--force", help="Force regeneration of all artifacts (skip cache)"),
+    ] = False,
+    skip_json: Annotated[
+        bool,
+        typer.Option("--skip-json", help="Skip JSON report generation"),
+    ] = False,
+    skip_markdown: Annotated[
+        bool,
+        typer.Option("--skip-markdown", help="Skip Markdown report generation"),
+    ] = False,
+    top_ideas: Annotated[
+        int | None,
+        typer.Option("--top-ideas", help="Number of top ideas in Markdown report (default: 10)"),
+    ] = None,
 ) -> None:
     """
-    Run the complete idea generation pipeline.
+    Run the complete idea generation pipeline end-to-end.
 
-    This command will be implemented in a future iteration to:
-    - Execute the innovator persona to generate ideas
-    - Execute the critic persona to evaluate ideas
-    - Generate final reports and recommendations
+    This command orchestrates all stages:
+    1. Ingest issues from GitHub
+    2. Summarize with LLM persona
+    3. Group into clusters
+    4. Rank by composite score
+    5. Generate JSON and Markdown reports
+
+    Intermediate artifacts are cached to enable resumption after failures.
+    Use --force to regenerate all artifacts from scratch.
     """
-    config = load_config(
-        github_repo=github_repo,
-        github_token=github_token,
-        ollama_host=ollama_host,
-        ollama_port=ollama_port,
-        model_innovator=model_innovator,
-        model_critic=model_critic,
-        output_dir=output_dir,
-        data_dir=data_dir,
-        persona_dir=persona_dir,
-    )
-    typer.echo("Running idea generation pipeline...")
-    typer.echo(f"Repository: {config.github_repo or 'Not configured'}")
-    typer.echo(f"Innovator model: {config.model_innovator}")
-    typer.echo(f"Critic model: {config.model_critic}")
-    typer.echo(f"Output directory: {config.output_dir}")
-    typer.echo("\n⚠ This command is not yet implemented.")
-    typer.echo("This is a placeholder for future development.")
+    from .pipelines.orchestrator import Orchestrator, OrchestratorError
+
+    try:
+        config = load_config(
+            github_repo=github_repo,
+            github_token=github_token,
+            ollama_host=ollama_host,
+            ollama_port=ollama_port,
+            model_innovator=model_innovator,
+            output_dir=output_dir,
+            data_dir=data_dir,
+        )
+
+        # Override top_ideas if provided
+        if top_ideas is not None:
+            config.top_ideas_count = top_ideas
+
+        # Validate required configuration
+        if not config.github_repo:
+            typer.echo(
+                "Error: GitHub repository not configured.\n"
+                "Provide via --github-repo or set IDEA_GEN_GITHUB_REPO in .env",
+                err=True,
+            )
+            raise typer.Exit(code=1)
+
+        typer.echo("=" * 60)
+        typer.echo("🚀 Running Complete Idea Generation Pipeline")
+        typer.echo("=" * 60)
+        typer.echo(f"\nRepository: {config.github_repo}")
+        typer.echo(f"Model: {config.model_innovator}")
+        typer.echo(f"Ollama endpoint: {config.ollama_base_url}")
+        typer.echo(f"Output directory: {config.output_dir}")
+        typer.echo(f"Data directory: {config.data_dir}")
+        typer.echo(f"\nOptions:")
+        typer.echo(f"  - Force regeneration: {force}")
+        typer.echo(f"  - Skip JSON: {skip_json}")
+        typer.echo(f"  - Skip Markdown: {skip_markdown}")
+        typer.echo(f"  - Top ideas count: {config.top_ideas_count}")
+        typer.echo(f"\nScoring Weights:")
+        typer.echo(f"  - Novelty: {config.ranking_weight_novelty:.2f}")
+        typer.echo(f"  - Feasibility: {config.ranking_weight_feasibility:.2f}")
+        typer.echo(f"  - Desirability: {config.ranking_weight_desirability:.2f}")
+        typer.echo(f"  - Attention: {config.ranking_weight_attention:.2f}")
+        typer.echo("\n" + "=" * 60 + "\n")
+
+        # Run orchestrator
+        orchestrator = Orchestrator(config)
+        results = orchestrator.run(
+            force=force,
+            skip_json=skip_json,
+            skip_markdown=skip_markdown,
+        )
+
+        # Display results
+        typer.echo("\n" + "=" * 60)
+        typer.echo("✅ Pipeline Completed Successfully!")
+        typer.echo("=" * 60 + "\n")
+        typer.echo("Summary:")
+        if "issues_count" in results:
+            typer.echo(f"  - Issues ingested: {results['issues_count']}")
+        if "summaries_count" in results:
+            typer.echo(f"  - Summaries generated: {results['summaries_count']}")
+        if "clusters_count" in results:
+            typer.echo(f"  - Clusters created: {results['clusters_count']}")
+
+        typer.echo("\nReports generated:")
+        if "json_report" in results:
+            typer.echo(f"  - JSON: {results['json_report']}")
+        if "markdown_report" in results:
+            typer.echo(f"  - Markdown: {results['markdown_report']}")
+
+        typer.echo("\n" + "=" * 60)
+
+    except OrchestratorError as e:
+        typer.echo(f"Pipeline error: {e}", err=True)
+        raise typer.Exit(code=1) from e
+    except ValueError as e:
+        typer.echo(f"Configuration error: {e}", err=True)
+        raise typer.Exit(code=1) from e
+    except Exception as e:
+        typer.echo(f"Unexpected error: {e}", err=True)
+        raise typer.Exit(code=1) from e
 
 
 @app.callback()
