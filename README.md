@@ -104,8 +104,12 @@ IDEA_GEN_MODEL_CRITIC=llama3.2:latest
 For private repositories or to avoid rate limits:
 
 1. Go to GitHub Settings → Developer settings → Personal access tokens
-2. Generate a new token (classic) with `repo` scope
+2. Generate a new token (classic) with `repo` scope for private repos, or `public_repo` scope for public repos
 3. Copy the token and add it to your `.env` file
+
+**Token Scopes:**
+- `public_repo`: Required for accessing public repositories (read-only)
+- `repo`: Required for accessing private repositories (includes `public_repo`)
 
 ## Usage
 
@@ -143,11 +147,106 @@ idea-generator setup --skip-pull
 idea-generator setup --offline
 ```
 
-### Step 2: Ingest Repository Data (Coming Soon)
+### Step 2: Ingest Repository Data
 
 ```bash
 idea-generator ingest --github-repo owner/repo
 ```
+
+This command will:
+- ✓ Fetch all open issues with pagination
+- ✓ Retrieve comment threads for each issue
+- ✓ Normalize and clean the data (strip markdown noise, deduplicate comments)
+- ✓ Apply noise filtering to flag low-signal issues
+- ✓ Truncate combined text to fit within token limits (default: 8000 characters)
+- ✓ Save normalized JSON to the data directory
+
+**Options:**
+- `--github-repo`, `-r`: GitHub repository in format 'owner/repo' (required)
+- `--github-token`, `-t`: GitHub API token (optional, can be set via `IDEA_GEN_GITHUB_TOKEN`)
+- `--data-dir`, `-d`: Data directory (default: ./data)
+
+**Examples:**
+
+```bash
+# Ingest from a public repository
+idea-generator ingest --github-repo facebook/react
+
+# Ingest from a private repository (requires token)
+idea-generator ingest --github-repo myorg/private-repo --github-token ghp_xxx
+
+# Use custom data directory
+idea-generator ingest --github-repo owner/repo --data-dir /custom/data
+```
+
+**Pagination and Rate Limits:**
+
+The ingestion process automatically handles:
+- **Pagination**: Fetches all issues and comments across multiple pages (100 items per page by default)
+- **Rate Limits**: Implements exponential backoff and retry logic when rate limits are hit
+- **Caching**: Raw API responses are cached to `data/cache/` for offline re-use and debugging
+
+**Truncation Behavior:**
+
+To ensure data fits within LLM context windows:
+- Combined issue body + comments are limited to 8000 characters by default (configurable via `IDEA_GEN_MAX_TEXT_LENGTH`)
+- Issue body gets priority (at least 50% of the limit)
+- Comments are included in order until the limit is reached
+- Truncation is logged and tracked in the output JSON
+
+**Noise Filtering:**
+
+Issues are automatically flagged (but not removed) if they match noise patterns:
+- Spam labels (spam, invalid, wontfix, duplicate)
+- Bot authors (dependabot, renovate, etc.)
+- Single-word titles
+- Empty or very short bodies
+- Common spam patterns (test, testing, hello, hi, hey)
+
+Flagged issues are included in the output with `is_noise: true` and a `noise_reason` field.
+
+**Output Format:**
+
+Normalized issues are saved to `data/owner_repo_issues.json` with this structure:
+
+```json
+[
+  {
+    "id": 123456789,
+    "number": 42,
+    "title": "Issue title",
+    "body": "Cleaned issue body (markdown stripped)",
+    "labels": ["bug", "enhancement"],
+    "state": "open",
+    "reactions": {"+1": 5, "heart": 2},
+    "comments": [
+      {
+        "id": 987654321,
+        "author": "username",
+        "body": "Cleaned comment body",
+        "created_at": "2025-01-01T12:00:00+00:00",
+        "reactions": {"+1": 1}
+      }
+    ],
+    "url": "https://github.com/owner/repo/issues/42",
+    "created_at": "2025-01-01T10:00:00+00:00",
+    "updated_at": "2025-01-02T10:00:00+00:00",
+    "is_noise": false,
+    "noise_reason": null,
+    "truncated": false,
+    "original_length": 1234
+  }
+]
+```
+
+**Edge Cases Handled:**
+
+- **Large repositories**: Streams paginated requests without exhausting memory
+- **Deleted users**: Issues/comments from deleted accounts have `author: null`
+- **Missing content**: Issues with null/empty bodies are handled gracefully
+- **Non-UTF8 characters**: Emoji and RTL scripts are preserved in valid JSON
+- **API errors**: 410 (Gone) on deleted comments returns empty object; 403/404 errors are retried or skipped
+- **Private repos**: Insufficient token scopes raise actionable errors
 
 ### Step 3: Generate Ideas (Coming Soon)
 

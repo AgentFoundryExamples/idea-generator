@@ -99,6 +99,32 @@ class Config(BaseSettings):
         le=32,
     )
 
+    # GitHub API configuration
+    github_per_page: int = Field(
+        default=100,
+        description="Number of items per page for GitHub API requests",
+        ge=1,
+        le=100,
+    )
+    github_max_retries: int = Field(
+        default=3,
+        description="Maximum number of retries for GitHub API requests",
+        ge=0,
+        le=10,
+    )
+
+    # Text processing configuration
+    max_text_length: int = Field(
+        default=8000,
+        description="Maximum combined length of issue body and comments (in characters)",
+        ge=1000,
+        le=100000,
+    )
+    noise_filter_enabled: bool = Field(
+        default=True,
+        description="Enable noise/spam filtering for issues",
+    )
+
     # Directory configuration
     output_dir: Path = Field(
         default=Path("output"),
@@ -147,6 +173,10 @@ def load_config(
     model_critic: str | None = None,
     batch_size: int | None = None,
     max_workers: int | None = None,
+    github_per_page: int | None = None,
+    github_max_retries: int | None = None,
+    max_text_length: int | None = None,
+    noise_filter_enabled: bool | None = None,
     output_dir: Path | None = None,
     data_dir: Path | None = None,
     persona_dir: Path | None = None,
@@ -157,7 +187,7 @@ def load_config(
     CLI arguments override environment variables and config file values.
     """
     # Build kwargs explicitly to maintain type safety
-    kwargs: dict[str, str | int | Path] = {}
+    kwargs: dict[str, str | int | Path | bool] = {}
     if github_repo is not None:
         kwargs["github_repo"] = github_repo
     if github_token is not None:
@@ -174,6 +204,14 @@ def load_config(
         kwargs["batch_size"] = batch_size
     if max_workers is not None:
         kwargs["max_workers"] = max_workers
+    if github_per_page is not None:
+        kwargs["github_per_page"] = github_per_page
+    if github_max_retries is not None:
+        kwargs["github_max_retries"] = github_max_retries
+    if max_text_length is not None:
+        kwargs["max_text_length"] = max_text_length
+    if noise_filter_enabled is not None:
+        kwargs["noise_filter_enabled"] = noise_filter_enabled
     if output_dir is not None:
         kwargs["output_dir"] = output_dir
     if data_dir is not None:

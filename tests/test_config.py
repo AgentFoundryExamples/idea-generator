@@ -49,6 +49,10 @@ class TestConfig:
         assert config.model_critic == "llama3.2:latest"
         assert config.batch_size == 10
         assert config.max_workers == 4
+        assert config.github_per_page == 100
+        assert config.github_max_retries == 3
+        assert config.max_text_length == 8000
+        assert config.noise_filter_enabled is True
 
     def test_config_github_repo_validation(self) -> None:
         """Test GitHub repository format validation."""
