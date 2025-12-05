@@ -365,7 +365,122 @@ ollama pull llama3.2:latest
 
 ⚠️ **No Batch Processing**: Issues are intentionally processed one at a time to avoid context overflow with small models. This is by design for deterministic, per-issue summaries.
 
-### Step 4: Generate Ideas (Coming Soon)
+### Step 4: Group Summarized Issues
+
+```bash
+idea-generator group --github-repo owner/repo
+```
+
+This command:
+- ✓ Loads summarized issues from the output directory
+- ✓ Groups summaries in batches through the grouper LLM persona
+- ✓ Merges duplicate or highly similar issues into clusters
+- ✓ Splits multi-topic issues when appropriate
+- ✓ Preserves unique issues as singleton clusters
+- ✓ Aggregates metrics deterministically (averages)
+- ✓ Saves idea clusters to the output directory
+
+**Options:**
+- `--github-repo`, `-r`: GitHub repository in format 'owner/repo' (required)
+- `--output-dir`, `-o`: Output directory (default: ./output)
+- `--ollama-host`: Ollama server host (default: http://localhost)
+- `--ollama-port`: Ollama server port (default: 11434)
+- `--model-innovator`: Model to use for grouping (default: llama3.2:latest)
+- `--skip-noise`: Skip summaries already flagged as noise
+- `--max-batch-size`: Maximum summaries per batch (default: 20)
+- `--max-batch-chars`: Maximum characters per batch (default: 50000)
+
+**Examples:**
+
+```bash
+# Group summaries from a repository
+idea-generator group --github-repo facebook/react
+
+# Use custom batch limits
+idea-generator group --github-repo owner/repo --max-batch-size 15 --max-batch-chars 40000
+
+# Skip noise-flagged summaries
+idea-generator group --github-repo owner/repo --skip-noise
+```
+
+**Grouper Persona Behavior:**
+
+The grouper uses the same Ollama model as the summarizer but with a distinct system prompt optimized for clustering and deduplication. It analyzes batches of summarized issues to:
+
+1. **Merge Duplicates**: Combines issues addressing the same core problem or feature
+2. **Split Multi-Topic**: Separates issues that combine multiple distinct concerns
+3. **Preserve Singletons**: Keeps unique issues as individual clusters
+4. **Aggregate Metrics**: Calculates averages for novelty, feasibility, desirability, and attention
+
+**Batching Strategy:**
+
+Issues are processed in batches to respect LLM context limits:
+- **Max Batch Size**: Controls the number of summaries per request (default: 20)
+- **Max Batch Chars**: Controls the character count per request (default: 50000)
+- **Deterministic Ordering**: Issues are processed in consistent order across runs
+- **Cursor State**: Pipeline tracks progress through batches automatically
+
+**Validation and Post-Processing:**
+
+The pipeline validates every cluster to ensure:
+- All referenced issue IDs exist in the input batch
+- No issue appears in multiple clusters
+- All input issues are covered by exactly one cluster
+- Metrics are aggregated deterministically using averages
+
+**Model Reuse:**
+
+The grouper reuses the same Ollama model weights as the summarizer (default: `llama3.2:latest`) but with a different system prompt. This means:
+- No additional model download required
+- Consistent model behavior across personas
+- Different prompts produce different analysis styles
+- Prompts are stored in version control for transparency
+
+**Output Format:**
+
+Clusters are saved to `output/owner_repo_clusters.json`:
+
+```json
+[
+  {
+    "cluster_id": "ui-ux-001",
+    "representative_title": "Theme customization support",
+    "summary": "Users request dark mode and theme switching for visual customization.",
+    "topic_area": "UI/UX",
+    "member_issue_ids": [100, 101],
+    "novelty": 0.35,
+    "feasibility": 0.75,
+    "desirability": 0.88,
+    "attention": 0.65
+  }
+]
+```
+
+**Edge Cases Handled:**
+
+- **Large Datasets**: Automatically splits into multiple batches without losing ordering
+- **Overlapping Assignments**: Resolves deterministically (smallest cluster_id wins)
+- **Unknown Issue IDs**: Forces retry or drops cluster with logged diagnostics
+- **No Overlaps**: Emits singleton clusters mirroring original summaries
+- **Validation Failures**: Retries once automatically before failing
+
+**Important Notes:**
+
+⚠️ **LLM Execution**: This command requires a running Ollama server. Ensure Ollama is running:
+
+```bash
+# Start Ollama server
+ollama serve
+
+# Verify model is available
+ollama list | grep llama3.2
+```
+
+⚠️ **Processing Time**: Grouping is faster than summarization due to batching but can still take several minutes for large datasets. Progress is logged per batch.
+
+⚠️ **Batch Processing**: Unlike summarization, grouping uses batches to process multiple issues simultaneously within context limits.
+
+### Step 5: Generate Ideas (Coming Soon)
 
 ```bash
 idea-generator run --github-repo owner/repo
@@ -379,7 +494,7 @@ idea-generator/
 │   ├── __init__.py          # Package initialization
 │   ├── cli.py               # CLI interface (Typer commands)
 │   ├── config.py            # Configuration management
-│   ├── models.py            # Pydantic models (NormalizedIssue, SummarizedIssue)
+│   ├── models.py            # Pydantic models (NormalizedIssue, SummarizedIssue, IdeaCluster)
 │   ├── setup.py             # Setup workflow and Ollama integration
 │   ├── cleaning.py          # Issue cleaning and normalization
 │   ├── github_client.py     # GitHub API client with caching
@@ -387,10 +502,12 @@ idea-generator/
 │   │   ├── __init__.py     # LLM module initialization
 │   │   ├── client.py        # Ollama HTTP client wrapper
 │   │   └── prompts/         # LLM persona prompts
-│   │       └── summarizer.txt  # Summarizer persona system prompt
+│   │       ├── summarizer.txt  # Summarizer persona system prompt
+│   │       └── grouper.txt     # Grouper persona system prompt
 │   └── pipelines/           # Processing pipelines
 │       ├── __init__.py     # Pipeline module initialization
-│       └── summarize.py     # Summarization pipeline
+│       ├── summarize.py     # Summarization pipeline
+│       └── grouping.py      # Grouping/clustering pipeline
 ├── tests/                   # Test suite
 │   ├── test_config.py       # Configuration tests
 │   ├── test_models.py       # Model validation tests
@@ -399,6 +516,7 @@ idea-generator/
 │   ├── test_github_client.py # GitHub API client tests
 │   ├── test_llm_client.py   # LLM client tests
 │   ├── test_summarize_pipeline.py  # Summarization pipeline tests
+│   ├── test_grouping_pipeline.py   # Grouping pipeline tests
 │   ├── test_integration.py  # End-to-end integration tests
 │   └── test_cli.py          # CLI integration tests
 ├── output/                  # Generated ideas and reports (created by setup)

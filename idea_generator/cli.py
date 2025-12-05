@@ -524,6 +524,230 @@ def summarize(
 
 
 @app.command()
+def group(
+    github_repo: GithubRepoOption = None,
+    output_dir: OutputDirOption = None,
+    ollama_host: OllamaHostOption = None,
+    ollama_port: OllamaPortOption = None,
+    model_innovator: ModelInnovatorOption = None,
+    skip_noise: Annotated[
+        bool,
+        typer.Option("--skip-noise", help="Skip summaries already flagged as noise"),
+    ] = False,
+    max_batch_size: Annotated[
+        int | None,
+        typer.Option("--max-batch-size", help="Maximum summaries per batch (default: 20)"),
+    ] = None,
+    max_batch_chars: Annotated[
+        int | None,
+        typer.Option("--max-batch-chars", help="Maximum characters per batch (default: 50000)"),
+    ] = None,
+) -> None:
+    """
+    Group summarized issues into actionable idea clusters.
+
+    This command:
+    - Loads summarized issues from the output directory
+    - Processes summaries in batches through the grouper LLM persona
+    - Merges duplicate issues and splits multi-topic issues
+    - Aggregates metrics deterministically across cluster members
+    - Saves idea clusters to the output directory
+
+    The grouper uses the same Ollama model as the summarizer but with a
+    different system prompt optimized for clustering and deduplication.
+
+    Batching is used to respect context window limits. Issues are processed
+    in chunks defined by --max-batch-size and --max-batch-chars.
+    """
+    from pathlib import Path
+
+    from .llm.client import OllamaClient, OllamaError
+    from .models import SummarizedIssue
+    from .pipelines.grouping import GroupingError, GroupingPipeline
+
+    try:
+        config = load_config(
+            github_repo=github_repo,
+            output_dir=output_dir,
+            ollama_host=ollama_host,
+            ollama_port=ollama_port,
+            model_innovator=model_innovator,
+        )
+
+        # Apply CLI overrides for grouping config
+        if max_batch_size is not None:
+            config.grouping_max_batch_size = max_batch_size
+        if max_batch_chars is not None:
+            config.grouping_max_batch_chars = max_batch_chars
+
+        # Validate required configuration
+        if not config.github_repo:
+            typer.echo(
+                "Error: GitHub repository not configured.\n"
+                "Provide via --github-repo or set IDEA_GEN_GITHUB_REPO in .env",
+                err=True,
+            )
+            raise typer.Exit(code=1)
+
+        # Parse owner/repo
+        try:
+            owner, repo = config.github_repo.split("/")
+        except ValueError:
+            typer.echo(
+                f"Error: Invalid repository format '{config.github_repo}'. "
+                "Expected format: 'owner/repo'",
+                err=True,
+            )
+            raise typer.Exit(code=1) from None
+
+        typer.echo(f"Grouping summaries from {config.github_repo}...")
+        typer.echo(f"Output directory: {config.output_dir}")
+        typer.echo(f"Model: {config.model_innovator}")
+        typer.echo(f"Ollama endpoint: {config.ollama_base_url}")
+        typer.echo(
+            f"Batch limits: size={config.grouping_max_batch_size}, "
+            f"chars={config.grouping_max_batch_chars}\n"
+        )
+
+        # Ensure directories exist
+        config.ensure_directories()
+
+        # Load summaries
+        summaries_file = config.output_dir / f"{owner}_{repo}_summaries.json"
+        if not summaries_file.exists():
+            typer.echo(
+                f"Error: Summaries file not found: {summaries_file}\n"
+                "Please run 'idea-generator summarize' first.",
+                err=True,
+            )
+            raise typer.Exit(code=1)
+
+        typer.echo(f"Loading summaries from {summaries_file}...")
+        with open(summaries_file, encoding="utf-8") as f:
+            summaries_data = json.load(f)
+
+        summaries = [SummarizedIssue(**s) for s in summaries_data]
+        typer.echo(f"✓ Loaded {len(summaries)} summaries\n")
+
+        if not summaries:
+            typer.echo("No summaries to group.")
+            return
+
+        # Initialize Ollama client
+        typer.echo("Connecting to Ollama server...")
+        try:
+            llm_client = OllamaClient(
+                base_url=config.ollama_base_url,
+                timeout=config.llm_timeout,
+                max_retries=config.llm_max_retries,
+            )
+
+            if not llm_client.check_health():
+                typer.echo(
+                    f"Error: Unable to connect to Ollama server at {config.ollama_base_url}\n"
+                    "Please ensure Ollama is running:\n"
+                    "  - Start server with: ollama serve\n"
+                    "  - Or check if running on a different port",
+                    err=True,
+                )
+                raise typer.Exit(code=1)
+
+            typer.echo(f"✓ Connected to Ollama at {config.ollama_base_url}\n")
+
+        except OllamaError as e:
+            typer.echo(f"Error connecting to Ollama: {e}", err=True)
+            raise typer.Exit(code=1) from e
+
+        # Initialize grouping pipeline
+        prompt_path = Path(__file__).parent / "llm" / "prompts" / "grouper.txt"
+
+        try:
+            pipeline = GroupingPipeline(
+                llm_client=llm_client,
+                model=config.model_innovator,
+                prompt_template_path=prompt_path,
+                max_batch_size=config.grouping_max_batch_size,
+                max_batch_chars=config.grouping_max_batch_chars,
+            )
+        except GroupingError as e:
+            typer.echo(f"Error initializing pipeline: {e}", err=True)
+            raise typer.Exit(code=1) from e
+
+        # Group summaries
+        typer.echo("Processing summaries through grouper persona...")
+        typer.echo(f"Configuration: skip_noise={skip_noise}\n")
+
+        try:
+            clusters = pipeline.group_summaries(summaries, skip_noise=skip_noise)
+        except Exception as e:
+            typer.echo(f"Error during grouping: {e}", err=True)
+            raise typer.Exit(code=1) from e
+        finally:
+            llm_client.close()
+
+        if not clusters:
+            typer.echo("No clusters generated.")
+            return
+
+        # Save clusters
+        output_file = config.output_dir / f"{owner}_{repo}_clusters.json"
+        typer.echo(f"\nSaving clusters to {output_file}...")
+
+        with open(output_file, "w", encoding="utf-8") as f:
+            json.dump(
+                [cluster.model_dump(mode="json") for cluster in clusters],
+                f,
+                indent=2,
+                ensure_ascii=False,
+            )
+
+        typer.echo(f"✓ Saved {len(clusters)} clusters\n")
+
+        # Summary statistics
+        total_issues = sum(len(c.member_issue_ids) for c in clusters)
+        singleton_count = sum(1 for c in clusters if len(c.member_issue_ids) == 1)
+        avg_cluster_size = total_issues / len(clusters) if clusters else 0
+
+        typer.echo("✅ Grouping completed successfully!\n")
+        typer.echo("Cluster Statistics:")
+        typer.echo(f"  - Total clusters: {len(clusters)}")
+        typer.echo(f"  - Singleton clusters: {singleton_count}")
+        typer.echo(f"  - Multi-member clusters: {len(clusters) - singleton_count}")
+        typer.echo(f"  - Average cluster size: {avg_cluster_size:.1f} issues")
+        typer.echo(f"  - Total issues covered: {total_issues}")
+        typer.echo(f"\nOutput: {output_file}")
+
+    except ValueError as e:
+        # Configuration or validation errors
+        typer.echo(f"Configuration error: {e}", err=True)
+        raise typer.Exit(code=1) from e
+    except FileNotFoundError as e:
+        # Missing files
+        typer.echo(f"File not found: {e}", err=True)
+        raise typer.Exit(code=1) from e
+    except PermissionError as e:
+        # Permission issues
+        typer.echo(f"Permission denied: {e}", err=True)
+        raise typer.Exit(code=1) from e
+    except json.JSONDecodeError as e:
+        # Invalid JSON in summaries file
+        typer.echo(f"Invalid JSON in summaries file: {e}", err=True)
+        raise typer.Exit(code=1) from e
+    except OllamaError as e:
+        # LLM/Ollama specific errors
+        typer.echo(f"Ollama error: {e}", err=True)
+        raise typer.Exit(code=1) from e
+    except GroupingError as e:
+        # Grouping pipeline errors
+        typer.echo(f"Grouping error: {e}", err=True)
+        raise typer.Exit(code=1) from e
+    except Exception as e:
+        # Unexpected errors
+        typer.echo(f"Unexpected error during grouping: {e}", err=True)
+        raise typer.Exit(code=1) from e
+
+
+@app.command()
 def run(
     github_repo: GithubRepoOption = None,
     github_token: GithubTokenOption = None,
