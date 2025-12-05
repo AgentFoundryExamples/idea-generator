@@ -1,10 +1,164 @@
 {
-  "nodes": [],
-  "edges": [],
+  "nodes": [
+    {
+      "id": "idea_generator/__init__.py",
+      "path": "idea_generator/__init__.py",
+      "type": "file",
+      "external_dependencies": {
+        "stdlib": [],
+        "third-party": []
+      }
+    },
+    {
+      "id": "idea_generator/cli.py",
+      "path": "idea_generator/cli.py",
+      "type": "file",
+      "external_dependencies": {
+        "stdlib": [
+          "pathlib.Path",
+          "typing.Annotated"
+        ],
+        "third-party": [
+          "typer"
+        ]
+      }
+    },
+    {
+      "id": "idea_generator/config.py",
+      "path": "idea_generator/config.py",
+      "type": "file",
+      "external_dependencies": {
+        "stdlib": [
+          "pathlib.Path"
+        ],
+        "third-party": [
+          "pydantic.Field",
+          "pydantic.field_validator",
+          "pydantic_settings.BaseSettings",
+          "pydantic_settings.SettingsConfigDict"
+        ]
+      }
+    },
+    {
+      "id": "idea_generator/setup.py",
+      "path": "idea_generator/setup.py",
+      "type": "file",
+      "external_dependencies": {
+        "stdlib": [
+          "json",
+          "pathlib.Path",
+          "shutil",
+          "subprocess"
+        ],
+        "third-party": [
+          "httpx",
+          "typer"
+        ]
+      }
+    },
+    {
+      "id": "tests/__init__.py",
+      "path": "tests/__init__.py",
+      "type": "file",
+      "external_dependencies": {
+        "stdlib": [],
+        "third-party": []
+      }
+    },
+    {
+      "id": "tests/test_cli.py",
+      "path": "tests/test_cli.py",
+      "type": "file",
+      "external_dependencies": {
+        "stdlib": [
+          "unittest.mock.patch"
+        ],
+        "third-party": [
+          "typer.testing.CliRunner"
+        ]
+      }
+    },
+    {
+      "id": "tests/test_config.py",
+      "path": "tests/test_config.py",
+      "type": "file",
+      "external_dependencies": {
+        "stdlib": [
+          "os",
+          "pathlib.Path",
+          "tempfile"
+        ],
+        "third-party": [
+          "pydantic.ValidationError",
+          "pytest"
+        ]
+      }
+    },
+    {
+      "id": "tests/test_setup.py",
+      "path": "tests/test_setup.py",
+      "type": "file",
+      "external_dependencies": {
+        "stdlib": [
+          "json",
+          "pathlib.Path",
+          "tempfile",
+          "unittest.mock.MagicMock",
+          "unittest.mock.patch"
+        ],
+        "third-party": [
+          "httpx",
+          "pytest"
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "tests/test_cli.py",
+      "target": "idea_generator/cli.py"
+    },
+    {
+      "source": "tests/test_cli.py",
+      "target": "idea_generator/setup.py"
+    },
+    {
+      "source": "tests/test_config.py",
+      "target": "idea_generator/config.py"
+    },
+    {
+      "source": "tests/test_setup.py",
+      "target": "idea_generator/config.py"
+    },
+    {
+      "source": "tests/test_setup.py",
+      "target": "idea_generator/setup.py"
+    }
+  ],
   "external_dependencies_summary": {
-    "stdlib": [],
-    "third-party": [],
-    "stdlib_count": 0,
-    "third-party_count": 0
+    "stdlib": [
+      "json",
+      "os",
+      "pathlib.Path",
+      "shutil",
+      "subprocess",
+      "tempfile",
+      "typing.Annotated",
+      "unittest.mock.MagicMock",
+      "unittest.mock.patch"
+    ],
+    "third-party": [
+      "httpx",
+      "pydantic.Field",
+      "pydantic.ValidationError",
+      "pydantic.field_validator",
+      "pydantic_settings.BaseSettings",
+      "pydantic_settings.SettingsConfigDict",
+      "pytest",
+      "typer",
+      "typer.testing.CliRunner"
+    ],
+    "stdlib_count": 9,
+    "third-party_count": 9
   }
 }

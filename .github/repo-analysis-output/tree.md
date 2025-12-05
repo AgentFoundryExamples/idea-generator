@@ -13,5 +13,18 @@
     └── tree.md
   └── workflows
     └── af_maintenance.yml
+├── idea_generator
+  ├── __init__.py
+  ├── cli.py
+  ├── config.py
+  └── setup.py
+├── tests
+  ├── __init__.py
+  ├── test_cli.py
+  ├── test_config.py
+  └── test_setup.py
+├── .env.example
+├── .gitignore
 ├── LICENSE
+├── pyproject.toml
 └── README.md

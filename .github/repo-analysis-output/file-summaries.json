@@ -1,0 +1,118 @@
+{
+  "schema_version": "2.0",
+  "total_files": 8,
+  "files": [
+    {
+      "schema_version": "2.0",
+      "path": "idea_generator/__init__.py",
+      "language": "Python",
+      "role": "module-init",
+      "role_justification": "module initialization file '__init__'",
+      "summary": "Python module initialization (role: module-init)",
+      "summary_text": "Python module initialization (role: module-init)",
+      "metrics": {
+        "size_bytes": 1280,
+        "loc": 15,
+        "todo_count": 0
+      }
+    },
+    {
+      "schema_version": "2.0",
+      "path": "idea_generator/cli.py",
+      "language": "Python",
+      "role": "cli",
+      "role_justification": "CLI-related name 'cli'",
+      "summary": "Python command-line interface (role: cli)",
+      "summary_text": "Python command-line interface (role: cli)",
+      "metrics": {
+        "size_bytes": 7938,
+        "loc": 205,
+        "todo_count": 0
+      }
+    },
+    {
+      "schema_version": "2.0",
+      "path": "idea_generator/config.py",
+      "language": "Python",
+      "role": "configuration",
+      "role_justification": "configuration file name 'config'",
+      "summary": "Python configuration file (role: configuration)",
+      "summary_text": "Python configuration file (role: configuration)",
+      "metrics": {
+        "size_bytes": 5843,
+        "loc": 143,
+        "todo_count": 0
+      }
+    },
+    {
+      "schema_version": "2.0",
+      "path": "idea_generator/setup.py",
+      "language": "Python",
+      "role": "implementation",
+      "role_justification": "general implementation file (default classification)",
+      "summary": "Python module for setup",
+      "summary_text": "Python module for setup",
+      "metrics": {
+        "size_bytes": 10519,
+        "loc": 223,
+        "todo_count": 0
+      }
+    },
+    {
+      "schema_version": "2.0",
+      "path": "tests/__init__.py",
+      "language": "Python",
+      "role": "test",
+      "role_justification": "located in 'tests' directory",
+      "summary": "Python test module initialization (role: test)",
+      "summary_text": "Python test module initialization (role: test)",
+      "metrics": {
+        "size_bytes": 1141,
+        "loc": 12,
+        "todo_count": 0
+      }
+    },
+    {
+      "schema_version": "2.0",
+      "path": "tests/test_cli.py",
+      "language": "Python",
+      "role": "test",
+      "role_justification": "filename starts with 'test_'",
+      "summary": "Python test file (role: test)",
+      "summary_text": "Python test file (role: test)",
+      "metrics": {
+        "size_bytes": 7747,
+        "loc": 160,
+        "todo_count": 0
+      }
+    },
+    {
+      "schema_version": "2.0",
+      "path": "tests/test_config.py",
+      "language": "Python",
+      "role": "test",
+      "role_justification": "filename starts with 'test_'",
+      "summary": "Python test file (role: test)",
+      "summary_text": "Python test file (role: test)",
+      "metrics": {
+        "size_bytes": 6868,
+        "loc": 133,
+        "todo_count": 0
+      }
+    },
+    {
+      "schema_version": "2.0",
+      "path": "tests/test_setup.py",
+      "language": "Python",
+      "role": "test",
+      "role_justification": "filename starts with 'test_'",
+      "summary": "Python test file (role: test)",
+      "summary_text": "Python test file (role: test)",
+      "metrics": {
+        "size_bytes": 14534,
+        "loc": 249,
+        "todo_count": 0
+      }
+    }
+  ]
+}
