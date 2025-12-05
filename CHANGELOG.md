@@ -265,6 +265,9 @@ To switch to a different Ollama model:
 - **Large Repositories**: Very large repos (1000+ issues) may take hours to process
 - **Ollama Server**: Must be running locally or remotely; no embedded mode
 
+#### Known Issues
+- **CLI Help Rendering**: Typer 0.15.1 has a known issue with `--help` rendering on some terminals. The actual commands work correctly. This is a cosmetic issue that will be resolved in a future typer update.
+
 ### Security Considerations
 
 #### Token Handling
