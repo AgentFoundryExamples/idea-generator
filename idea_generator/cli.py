@@ -408,8 +408,8 @@ def summarize(
         try:
             llm_client = OllamaClient(
                 base_url=config.ollama_base_url,
-                timeout=120.0,  # 2 minutes for 3-8B models
-                max_retries=3,
+                timeout=config.llm_timeout,
+                max_retries=config.llm_max_retries,
             )
 
             if not llm_client.check_health():
@@ -437,7 +437,7 @@ def summarize(
                 llm_client=llm_client,
                 model=config.model_innovator,
                 prompt_template_path=prompt_path,
-                max_tokens=4000,
+                max_tokens=config.summarization_max_tokens,
                 cache_dir=cache_dir,
             )
         except SummarizationError as e:
@@ -492,7 +492,32 @@ def summarize(
         typer.echo(f"\nOutput: {output_file}")
         typer.echo(f"Cache: {cache_dir}")
 
+    except ValueError as e:
+        # Configuration or validation errors
+        typer.echo(f"Configuration error: {e}", err=True)
+        raise typer.Exit(code=1) from e
+    except FileNotFoundError as e:
+        # Missing files
+        typer.echo(f"File not found: {e}", err=True)
+        raise typer.Exit(code=1) from e
+    except PermissionError as e:
+        # Permission issues
+        typer.echo(f"Permission denied: {e}", err=True)
+        raise typer.Exit(code=1) from e
+    except json.JSONDecodeError as e:
+        # Invalid JSON in issues file
+        typer.echo(f"Invalid JSON in issues file: {e}", err=True)
+        raise typer.Exit(code=1) from e
+    except OllamaError as e:
+        # LLM/Ollama specific errors
+        typer.echo(f"Ollama error: {e}", err=True)
+        raise typer.Exit(code=1) from e
+    except SummarizationError as e:
+        # Summarization pipeline errors
+        typer.echo(f"Summarization error: {e}", err=True)
+        raise typer.Exit(code=1) from e
     except Exception as e:
+        # Unexpected errors
         typer.echo(f"Unexpected error during summarization: {e}", err=True)
         raise typer.Exit(code=1) from e
 

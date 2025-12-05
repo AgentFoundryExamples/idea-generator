@@ -84,10 +84,31 @@ class SummarizationPipeline:
             self.cache_dir.mkdir(parents=True, exist_ok=True)
 
     def _get_cache_path(self, issue_id: int) -> Path | None:
-        """Get cache file path for an issue."""
+        """
+        Get cache file path for an issue.
+
+        Validates issue_id to prevent path traversal attacks.
+        """
         if not self.cache_dir:
             return None
-        return self.cache_dir / f"summary_{issue_id}.json"
+
+        # Validate issue_id is a positive integer to prevent path traversal
+        if issue_id <= 0:
+            raise ValueError(f"Invalid issue_id: {issue_id}")
+
+        cache_path = self.cache_dir / f"summary_{issue_id}.json"
+
+        # Ensure the resolved path is within cache_dir (prevent path traversal)
+        try:
+            cache_path = cache_path.resolve()
+            self.cache_dir.resolve()
+            if not str(cache_path).startswith(str(self.cache_dir.resolve())):
+                raise ValueError(f"Cache path outside cache directory: {cache_path}")
+        except (ValueError, OSError) as e:
+            logger.error(f"Invalid cache path for issue {issue_id}: {e}")
+            return None
+
+        return cache_path
 
     def _load_from_cache(self, issue_id: int) -> SummarizedIssue | None:
         """
@@ -104,9 +125,38 @@ class SummarizationPipeline:
             return None
 
         try:
+            # Limit file size to prevent DoS attacks
+            file_size = cache_path.stat().st_size
+            if file_size > 1_000_000:  # 1MB max
+                logger.warning(f"Cache file too large for issue {issue_id}: {file_size} bytes")
+                return None
+
             with open(cache_path, encoding="utf-8") as f:
                 data = json.load(f)
-                return SummarizedIssue(**data)
+
+            # Validate the data structure before creating model
+            if not isinstance(data, dict):
+                logger.warning(f"Invalid cache data type for issue {issue_id}: expected dict")
+                return None
+
+            # Validate required fields exist
+            required_fields = ["issue_id", "source_number", "title", "summary", "raw_issue_url"]
+            missing_fields = [f for f in required_fields if f not in data]
+            if missing_fields:
+                logger.warning(
+                    f"Cache missing required fields for issue {issue_id}: {missing_fields}"
+                )
+                return None
+
+            # Create and return validated model
+            return SummarizedIssue(**data)
+
+        except json.JSONDecodeError as e:
+            logger.warning(f"Corrupted cache JSON for issue {issue_id}: {e}")
+            return None
+        except ValueError as e:
+            logger.warning(f"Invalid cache data for issue {issue_id}: {e}")
+            return None
         except Exception as e:
             logger.warning(f"Failed to load cache for issue {issue_id}: {e}")
             return None
@@ -143,7 +193,11 @@ class SummarizationPipeline:
             return text, False
 
         # Truncate at word boundary
-        truncated = text[:max_chars].rsplit(" ", 1)[0]
+        truncated_part = text[:max_chars]
+        if " " in truncated_part:
+            truncated = truncated_part.rsplit(" ", 1)[0]
+        else:
+            truncated = truncated_part
         return truncated + "...", True
 
     def _format_issue_prompt(self, issue: NormalizedIssue) -> str:
