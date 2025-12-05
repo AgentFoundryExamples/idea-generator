@@ -75,16 +75,14 @@ def generate_json_report(
         member_ids = cluster_dict["member_issue_ids"]
         # Check if any member issue is flagged as noise
         has_noise = any(
-            issue_map.get(issue_id, NormalizedIssue(id=0, number=0, title="", body="", url="")).is_noise
+            issue_map.get(issue_id).is_noise if issue_id in issue_map else False
             for issue_id in member_ids
         )
         cluster_dict["has_noise_members"] = has_noise
 
         # Add source URLs for all member issues
         cluster_dict["source_issue_urls"] = [
-            issue_map.get(issue_id, NormalizedIssue(id=0, number=0, title="", body="", url="")).url
-            for issue_id in member_ids
-            if issue_id in issue_map
+            issue_map[issue_id].url for issue_id in member_ids if issue_id in issue_map
         ]
 
     # Write to file with proper error handling
