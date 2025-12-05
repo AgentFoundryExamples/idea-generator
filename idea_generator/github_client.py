@@ -141,8 +141,11 @@ class GitHubClient:
 
             # Raise for other client errors
             if response.status_code >= 400:
-                error_data = response.json() if response.text else {}
-                message = error_data.get("message", response.text)
+                try:
+                    error_data = response.json() if response.text else {}
+                    message = error_data.get("message", response.text)
+                except (json.JSONDecodeError, ValueError):
+                    message = response.text or f"HTTP {response.status_code}"
                 raise GitHubAPIError(f"GitHub API error {response.status_code}: {message}")
 
             response.raise_for_status()

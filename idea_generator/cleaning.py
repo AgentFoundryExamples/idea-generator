@@ -20,6 +20,15 @@ from typing import Any
 
 from .models import NormalizedComment, NormalizedIssue
 
+# Common spam patterns for noise detection
+SPAM_PATTERNS = [
+    r"^test\s*$",
+    r"^testing\s*$",
+    r"^hello\s*$",
+    r"^hi\s*$",
+    r"^hey\s*$",
+]
+
 
 def clean_markdown(text: str) -> str:
     """
@@ -139,9 +148,9 @@ def truncate_text(
     # Truncate issue body if needed
     truncation_marker = "... [truncated]"
     if len(issue_body) > issue_body_target:
-        truncated_issue = (
-            issue_body[: issue_body_target - len(truncation_marker)] + truncation_marker
-        )
+        # Ensure we don't create a negative slice
+        truncate_at = max(0, issue_body_target - len(truncation_marker))
+        truncated_issue = issue_body[:truncate_at] + truncation_marker
     else:
         truncated_issue = issue_body
 
@@ -162,9 +171,9 @@ def truncate_text(
             # Try to fit a truncated version of this comment
             remaining_space = comments_space - current_length
             if remaining_space > 100:  # Only truncate if there's meaningful space
-                truncated_body = (
-                    comment.body[: remaining_space - len(truncation_marker)] + truncation_marker
-                )
+                # Ensure we don't create a negative slice
+                truncate_at = max(0, remaining_space - len(truncation_marker))
+                truncated_body = comment.body[:truncate_at] + truncation_marker
                 truncated_comment = comment.model_copy(update={"body": truncated_body})
                 truncated_comments.append(truncated_comment)
             break
@@ -213,14 +222,7 @@ def is_noise_issue(
         return True, "Empty or very short body"
 
     # Check for common spam patterns in title
-    spam_patterns = [
-        r"^test\s*$",
-        r"^testing\s*$",
-        r"^hello\s*$",
-        r"^hi\s*$",
-        r"^hey\s*$",
-    ]
-    for pattern in spam_patterns:
+    for pattern in SPAM_PATTERNS:
         if re.match(pattern, title.lower().strip()):
             return True, f"Spam pattern in title: {title}"
 
