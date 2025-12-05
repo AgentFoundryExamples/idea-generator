@@ -31,8 +31,8 @@ from pathlib import Path
 from ..cleaning import normalize_github_issue
 from ..config import Config
 from ..filters import rank_clusters
-from ..github_client import GitHubClient
-from ..llm.client import OllamaClient
+from ..github_client import GitHubAPIError, GitHubClient
+from ..llm.client import OllamaClient, OllamaError
 from ..models import IdeaCluster, NormalizedIssue, SummarizedIssue
 from ..output import generate_json_report, generate_markdown_report
 from .grouping import GroupingPipeline
@@ -155,7 +155,7 @@ class Orchestrator:
 
         # Stage 4: Rank clusters
         logger.info("Stage 4: Ranking clusters by composite score...")
-        self.config.validate_weights()
+        # Note: weights are automatically validated during config initialization
         ranked_clusters = rank_clusters(
             clusters,
             weight_novelty=self.config.ranking_weight_novelty,
@@ -261,8 +261,13 @@ class Orchestrator:
 
                 return normalized_issues
 
+        except GitHubAPIError as e:
+            raise OrchestratorError(f"Failed to ingest issues from GitHub: {e}") from e
         except Exception as e:
-            raise OrchestratorError(f"Failed to ingest issues: {e}") from e
+            logger.exception("Unexpected error during issue ingestion")
+            raise OrchestratorError(
+                f"Failed to ingest issues: {e.__class__.__name__}: {e}"
+            ) from e
 
     def _summarize_issues(self, issues: list[NormalizedIssue]) -> list[SummarizedIssue]:
         """
@@ -287,38 +292,48 @@ class Orchestrator:
                 max_retries=self.config.llm_max_retries,
             )
 
-            if not llm_client.check_health():
-                raise OrchestratorError(
-                    f"Ollama server not reachable at {self.config.ollama_base_url}"
+            try:
+                if not llm_client.check_health():
+                    raise OrchestratorError(
+                        f"Ollama server not reachable at {self.config.ollama_base_url}"
+                    )
+
+                pipeline = SummarizationPipeline(
+                    llm_client=llm_client,
+                    model=self.config.model_innovator,
+                    prompt_template_path=prompt_path,
+                    max_tokens=self.config.summarization_max_tokens,
+                    cache_dir=cache_dir,
+                    cache_max_file_size=self.config.cache_max_file_size,
                 )
 
-            pipeline = SummarizationPipeline(
-                llm_client=llm_client,
-                model=self.config.model_innovator,
-                prompt_template_path=prompt_path,
-                max_tokens=self.config.summarization_max_tokens,
-                cache_dir=cache_dir,
-                cache_max_file_size=self.config.cache_max_file_size,
-            )
+                summaries = pipeline.summarize_issues(issues, skip_cache=False, skip_noise=False)
 
-            summaries = pipeline.summarize_issues(issues, skip_cache=False, skip_noise=False)
+                # Save to cache
+                owner, repo = self.config.github_repo.split("/")
+                summaries_file = self.config.output_dir / f"{owner}_{repo}_summaries.json"
+                with open(summaries_file, "w", encoding="utf-8") as f:
+                    json.dump(
+                        [s.model_dump(mode="json") for s in summaries],
+                        f,
+                        indent=2,
+                        ensure_ascii=False,
+                    )
 
-            # Save to cache
-            owner, repo = self.config.github_repo.split("/")
-            summaries_file = self.config.output_dir / f"{owner}_{repo}_summaries.json"
-            with open(summaries_file, "w", encoding="utf-8") as f:
-                json.dump(
-                    [s.model_dump(mode="json") for s in summaries],
-                    f,
-                    indent=2,
-                    ensure_ascii=False,
-                )
+                return summaries
+            finally:
+                llm_client.close()
 
-            llm_client.close()
-            return summaries
-
+        except OllamaError as e:
+            logger.exception("Ollama error during summarization")
+            raise OrchestratorError(
+                f"Failed to summarize issues due to LLM error: {e.__class__.__name__}: {e}"
+            ) from e
         except Exception as e:
-            raise OrchestratorError(f"Failed to summarize issues: {e}") from e
+            logger.exception("Unexpected error during summarization")
+            raise OrchestratorError(
+                f"Failed to summarize issues: {e.__class__.__name__}: {e}"
+            ) from e
 
     def _group_summaries(self, summaries: list[SummarizedIssue]) -> list[IdeaCluster]:
         """
@@ -342,37 +357,47 @@ class Orchestrator:
                 max_retries=self.config.llm_max_retries,
             )
 
-            if not llm_client.check_health():
-                raise OrchestratorError(
-                    f"Ollama server not reachable at {self.config.ollama_base_url}"
+            try:
+                if not llm_client.check_health():
+                    raise OrchestratorError(
+                        f"Ollama server not reachable at {self.config.ollama_base_url}"
+                    )
+
+                pipeline = GroupingPipeline(
+                    llm_client=llm_client,
+                    model=self.config.model_innovator,
+                    prompt_template_path=prompt_path,
+                    max_batch_size=self.config.grouping_max_batch_size,
+                    max_batch_chars=self.config.grouping_max_batch_chars,
                 )
 
-            pipeline = GroupingPipeline(
-                llm_client=llm_client,
-                model=self.config.model_innovator,
-                prompt_template_path=prompt_path,
-                max_batch_size=self.config.grouping_max_batch_size,
-                max_batch_chars=self.config.grouping_max_batch_chars,
-            )
+                clusters = pipeline.group_summaries(summaries, skip_noise=False)
 
-            clusters = pipeline.group_summaries(summaries, skip_noise=False)
+                # Save to cache
+                owner, repo = self.config.github_repo.split("/")
+                clusters_file = self.config.output_dir / f"{owner}_{repo}_clusters.json"
+                with open(clusters_file, "w", encoding="utf-8") as f:
+                    json.dump(
+                        [c.model_dump(mode="json") for c in clusters],
+                        f,
+                        indent=2,
+                        ensure_ascii=False,
+                    )
 
-            # Save to cache
-            owner, repo = self.config.github_repo.split("/")
-            clusters_file = self.config.output_dir / f"{owner}_{repo}_clusters.json"
-            with open(clusters_file, "w", encoding="utf-8") as f:
-                json.dump(
-                    [c.model_dump(mode="json") for c in clusters],
-                    f,
-                    indent=2,
-                    ensure_ascii=False,
-                )
+                return clusters
+            finally:
+                llm_client.close()
 
-            llm_client.close()
-            return clusters
-
+        except OllamaError as e:
+            logger.exception("Ollama error during grouping")
+            raise OrchestratorError(
+                f"Failed to group summaries due to LLM error: {e.__class__.__name__}: {e}"
+            ) from e
         except Exception as e:
-            raise OrchestratorError(f"Failed to group summaries: {e}") from e
+            logger.exception("Unexpected error during grouping")
+            raise OrchestratorError(
+                f"Failed to group summaries: {e.__class__.__name__}: {e}"
+            ) from e
 
     def _generate_empty_reports(self, skip_json: bool, skip_markdown: bool) -> None:
         """

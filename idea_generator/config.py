@@ -29,7 +29,7 @@ limitations under the License.
 
 from pathlib import Path
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Tolerance for weight validation (weights must sum to 1.0 ± this value)
@@ -228,7 +228,8 @@ class Config(BaseSettings):
         """Resolve paths to absolute paths."""
         return v.resolve()
 
-    def validate_weights(self) -> None:
+    @model_validator(mode="after")
+    def validate_weights(self) -> "Config":
         """Validate that ranking weights sum to approximately 1.0."""
         total = (
             self.ranking_weight_novelty
@@ -241,6 +242,7 @@ class Config(BaseSettings):
                 f"Ranking weights must sum to 1.0, got {total:.2f}. "
                 "Please adjust weights accordingly."
             )
+        return self
 
     @property
     def ollama_base_url(self) -> str:

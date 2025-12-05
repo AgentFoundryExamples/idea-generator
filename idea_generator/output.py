@@ -21,10 +21,13 @@ This module provides:
 """
 
 import json
+import logging
 from pathlib import Path
 
-from .filters import add_composite_scores
+from .filters import add_composite_scores, compute_composite_score
 from .models import IdeaCluster, NormalizedIssue
+
+logger = logging.getLogger(__name__)
 
 
 def generate_json_report(
@@ -73,6 +76,14 @@ def generate_json_report(
     # Enrich with noise flags and issue URLs
     for cluster_dict in clusters_with_scores:
         member_ids = cluster_dict["member_issue_ids"]
+
+        # Log warning for missing issue IDs
+        missing_ids = [issue_id for issue_id in member_ids if issue_id not in issue_map]
+        if missing_ids:
+            logger.warning(
+                f"Cluster {cluster_dict['cluster_id']} references missing issue IDs: {missing_ids}"
+            )
+
         # Check if any member issue is flagged as noise
         has_noise = any(
             issue_map[issue_id].is_noise for issue_id in member_ids if issue_id in issue_map
@@ -153,12 +164,13 @@ def generate_markdown_report(
 
     # Add each cluster
     for rank, cluster in enumerate(top_clusters, 1):
-        # Compute composite score
-        composite = (
-            cluster.novelty * weight_novelty
-            + cluster.feasibility * weight_feasibility
-            + cluster.desirability * weight_desirability
-            + cluster.attention * weight_attention
+        # Compute composite score using utility function
+        composite = compute_composite_score(
+            cluster,
+            weight_novelty=weight_novelty,
+            weight_feasibility=weight_feasibility,
+            weight_desirability=weight_desirability,
+            weight_attention=weight_attention,
         )
 
         # Determine priority tag
