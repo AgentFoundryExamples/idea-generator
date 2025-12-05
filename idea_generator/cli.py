@@ -40,7 +40,7 @@ GithubTokenOption = Annotated[
         "--github-token",
         "-t",
         help="GitHub API token for private repositories",
-        envvar="GITHUB_TOKEN",
+        envvar="IDEA_GEN_GITHUB_TOKEN",
     ),
 ]
 OllamaHostOption = Annotated[

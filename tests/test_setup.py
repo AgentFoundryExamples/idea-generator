@@ -61,7 +61,7 @@ class TestCheckOllamaServer:
             mock_get.return_value = mock_response
 
             assert check_ollama_server("http://localhost:11434") is True
-            mock_get.assert_called_once_with("http://localhost:11434/api/tags", timeout=5.0)
+            mock_get.assert_called_once_with("http://localhost:11434", timeout=5.0)
 
     def test_server_not_accessible(self) -> None:
         """Test when Ollama server is not accessible."""
@@ -78,6 +78,9 @@ class TestCheckOllamaServer:
         with patch("httpx.get") as mock_get:
             mock_response = MagicMock()
             mock_response.status_code = 500
+            mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
+                "Server error", request=MagicMock(), response=mock_response
+            )
             mock_get.return_value = mock_response
 
             assert check_ollama_server("http://localhost:11434") is False

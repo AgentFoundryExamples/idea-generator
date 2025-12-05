@@ -74,9 +74,12 @@ def check_ollama_server(base_url: str, timeout: float = 5.0) -> bool:
         True if server is accessible, False otherwise.
     """
     try:
-        response = httpx.get(f"{base_url}/api/tags", timeout=timeout)
-        return response.status_code == 200
-    except (httpx.RequestError, httpx.TimeoutException):
+        # Use the root endpoint which is a reliable health check
+        response = httpx.get(base_url, timeout=timeout)
+        # A successful request (2xx status) indicates the server is running.
+        response.raise_for_status()
+        return True
+    except (httpx.RequestError, httpx.TimeoutException, httpx.HTTPStatusError):
         return False
 
 
@@ -103,17 +106,23 @@ def pull_model(model_name: str, show_progress: bool = True) -> bool:
     try:
         if show_progress:
             typer.echo(f"Pulling model: {model_name}")
+
+        # Prevent potential subprocess deadlock by using explicit stdout/stderr
+        stdout_pipe = None if show_progress else subprocess.DEVNULL
+        stderr_pipe = None if show_progress else subprocess.DEVNULL
+
         result = subprocess.run(
             ["ollama", "pull", model_name],
-            capture_output=not show_progress,
+            stdout=stdout_pipe,
+            stderr=stderr_pipe,
             text=True,
             check=False,
         )
         if result.returncode != 0:
             if show_progress:
                 typer.echo(f"Warning: Failed to pull model {model_name}", err=True)
-                if result.stderr:
-                    typer.echo(f"Error: {result.stderr}", err=True)
+                # Since output is not captured when show_progress=True,
+                # the user will see stderr from the subprocess itself.
             return False
         if show_progress:
             typer.echo(f"✓ Successfully pulled model: {model_name}")

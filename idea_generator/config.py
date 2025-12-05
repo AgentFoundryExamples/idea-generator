@@ -112,7 +112,7 @@ class Config(BaseSettings):
     @classmethod
     def resolve_path(cls, v: Path) -> Path:
         """Resolve paths to absolute paths."""
-        return v.resolve() if v.is_absolute() else Path.cwd() / v
+        return v.resolve()
 
     @property
     def ollama_base_url(self) -> str:
