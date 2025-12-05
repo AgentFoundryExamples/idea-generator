@@ -1,6 +1,6 @@
 {
   "type": "directory",
-  "name": "agent-foundry-template",
+  "name": "idea-generator",
   "children": [
     {
       "type": "directory",

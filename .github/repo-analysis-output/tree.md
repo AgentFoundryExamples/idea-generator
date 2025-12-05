@@ -1,4 +1,4 @@
-# agent-foundry-template
+# idea-generator
 
 ├── .github
   ├── af-config
