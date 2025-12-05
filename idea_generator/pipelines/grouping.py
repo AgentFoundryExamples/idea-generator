@@ -463,19 +463,23 @@ class GroupingPipeline:
         # Filter noise if requested
         if skip_noise:
             original_count = len(summaries)
-            summaries = [s for s in summaries if not s.noise_flag]
-            skipped = original_count - len(summaries)
+            summaries_to_process = [s for s in summaries if not s.noise_flag]
+            skipped = original_count - len(summaries_to_process)
             if skipped > 0:
                 logger.info(f"Skipped {skipped} noise-flagged summaries")
+        else:
+            summaries_to_process = summaries
 
-        if not summaries:
+        if not summaries_to_process:
             logger.info("No non-noise summaries to group")
             return []
 
+        summaries_map = {s.issue_id: s for s in summaries_to_process}
+
         # Create batches
-        batches = self._create_batches(summaries)
+        batches = self._create_batches(summaries_to_process)
         logger.info(
-            f"Created {len(batches)} batches from {len(summaries)} summaries "
+            f"Created {len(batches)} batches from {len(summaries_to_process)} summaries "
             f"(max_batch_size={self.max_batch_size}, max_batch_chars={self.max_batch_chars})"
         )
 
@@ -513,8 +517,11 @@ class GroupingPipeline:
                 # Continue with remaining batches
                 continue
 
+        # Resolve overlaps across all batches
+        resolved_clusters = self._resolve_overlaps(all_clusters, summaries_map)
+
         logger.info(
-            f"Grouping complete: {len(all_clusters)} total clusters from {len(summaries)} summaries"
+            f"Grouping complete: {len(resolved_clusters)} total clusters from {len(summaries_to_process)} summaries"
         )
 
-        return all_clusters
+        return resolved_clusters
