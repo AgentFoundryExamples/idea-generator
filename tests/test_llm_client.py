@@ -40,7 +40,7 @@ class MockTransport(httpx.HTTPTransport):
     def handle_request(self, request: httpx.Request) -> httpx.Response:
         """Handle a mocked HTTP request."""
         path = request.url.path
-        
+
         # Only try to parse JSON for requests with content
         if request.content:
             try:

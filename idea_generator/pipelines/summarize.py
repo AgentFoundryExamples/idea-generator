@@ -74,11 +74,9 @@ class SummarizationPipeline:
 
         # Load system prompt
         if not prompt_template_path.exists():
-            raise SummarizationError(
-                f"Prompt template not found: {prompt_template_path}"
-            )
+            raise SummarizationError(f"Prompt template not found: {prompt_template_path}")
 
-        with open(prompt_template_path, "r", encoding="utf-8") as f:
+        with open(prompt_template_path, encoding="utf-8") as f:
             self.system_prompt = f.read()
 
         # Ensure cache directory exists
@@ -106,7 +104,7 @@ class SummarizationPipeline:
             return None
 
         try:
-            with open(cache_path, "r", encoding="utf-8") as f:
+            with open(cache_path, encoding="utf-8") as f:
                 data = json.load(f)
                 return SummarizedIssue(**data)
         except Exception as e:
@@ -254,9 +252,7 @@ class SummarizationPipeline:
             ]
             missing = [f for f in required_fields if f not in parsed_json]
             if missing:
-                raise SummarizationError(
-                    f"LLM response missing required fields: {missing}"
-                )
+                raise SummarizationError(f"LLM response missing required fields: {missing}")
 
             # Create SummarizedIssue with data from both sources
             summary_data = {
@@ -273,9 +269,7 @@ class SummarizationPipeline:
         except OllamaError as e:
             raise SummarizationError(f"Failed to parse LLM response: {e}") from e
 
-    def summarize_issue(
-        self, issue: NormalizedIssue, skip_cache: bool = False
-    ) -> SummarizedIssue:
+    def summarize_issue(self, issue: NormalizedIssue, skip_cache: bool = False) -> SummarizedIssue:
         """
         Summarize a single normalized issue using the LLM.
 
@@ -351,9 +345,7 @@ class SummarizationPipeline:
         for i, issue in enumerate(issues, 1):
             # Skip noise if requested
             if skip_noise and issue.is_noise:
-                logger.info(
-                    f"[{i}/{len(issues)}] Skipping noise issue #{issue.number}"
-                )
+                logger.info(f"[{i}/{len(issues)}] Skipping noise issue #{issue.number}")
                 continue
 
             logger.info(f"[{i}/{len(issues)}] Processing issue #{issue.number}...")
@@ -366,8 +358,6 @@ class SummarizationPipeline:
                 failed_count += 1
                 continue
 
-        logger.info(
-            f"Summarization complete: {len(summaries)} succeeded, {failed_count} failed"
-        )
+        logger.info(f"Summarization complete: {len(summaries)} succeeded, {failed_count} failed")
 
         return summaries

@@ -393,7 +393,7 @@ def summarize(
             raise typer.Exit(code=1)
 
         typer.echo(f"Loading issues from {issues_file}...")
-        with open(issues_file, "r", encoding="utf-8") as f:
+        with open(issues_file, encoding="utf-8") as f:
             issues_data = json.load(f)
 
         issues = [NormalizedIssue(**issue_data) for issue_data in issues_data]
@@ -429,9 +429,7 @@ def summarize(
             raise typer.Exit(code=1) from e
 
         # Initialize summarization pipeline
-        prompt_path = (
-            Path(__file__).parent / "llm" / "prompts" / "summarizer.txt"
-        )
+        prompt_path = Path(__file__).parent / "llm" / "prompts" / "summarizer.txt"
         cache_dir = config.output_dir / "summarization_cache"
 
         try:
@@ -448,9 +446,7 @@ def summarize(
 
         # Summarize issues
         typer.echo("Processing issues through summarizer persona...")
-        typer.echo(
-            f"Configuration: skip_cache={skip_cache}, skip_noise={skip_noise}\n"
-        )
+        typer.echo(f"Configuration: skip_cache={skip_cache}, skip_noise={skip_noise}\n")
 
         try:
             summaries = pipeline.summarize_issues(

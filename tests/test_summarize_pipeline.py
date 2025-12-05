@@ -16,7 +16,7 @@ Tests for the summarization pipeline.
 """
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import Mock
@@ -44,20 +44,20 @@ def sample_issue() -> NormalizedIssue:
                 id=1,
                 author="user1",
                 body="This would be great!",
-                created_at=datetime(2024, 1, 1, tzinfo=timezone.utc),
+                created_at=datetime(2024, 1, 1, tzinfo=UTC),
                 reactions={"+1": 5},
             ),
             NormalizedComment(
                 id=2,
                 author="user2",
                 body="We could use CSS variables for theming.",
-                created_at=datetime(2024, 1, 2, tzinfo=timezone.utc),
+                created_at=datetime(2024, 1, 2, tzinfo=UTC),
                 reactions={},
             ),
         ],
         url="https://github.com/owner/repo/issues/42",
-        created_at=datetime(2024, 1, 1, tzinfo=timezone.utc),
-        updated_at=datetime(2024, 1, 2, tzinfo=timezone.utc),
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         is_noise=False,
         truncated=False,
         original_length=100,
@@ -77,8 +77,8 @@ def noise_issue() -> NormalizedIssue:
         reactions={},
         comments=[],
         url="https://github.com/owner/repo/issues/1",
-        created_at=datetime(2024, 1, 1, tzinfo=timezone.utc),
-        updated_at=datetime(2024, 1, 1, tzinfo=timezone.utc),
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         is_noise=True,
         noise_reason="Single-word title",
         truncated=False,
@@ -108,9 +108,7 @@ def temp_prompt_file() -> Path:
 class TestSummarizationPipelineInit:
     """Tests for pipeline initialization."""
 
-    def test_pipeline_initialization(
-        self, mock_llm_client: Mock, temp_prompt_file: Path
-    ) -> None:
+    def test_pipeline_initialization(self, mock_llm_client: Mock, temp_prompt_file: Path) -> None:
         """Test that pipeline initializes correctly."""
         with TemporaryDirectory() as tmpdir:
             cache_dir = Path(tmpdir) / "cache"
@@ -156,9 +154,7 @@ class TestSummarizationPipelineInit:
 class TestTruncateText:
     """Tests for text truncation."""
 
-    def test_truncate_short_text(
-        self, mock_llm_client: Mock, temp_prompt_file: Path
-    ) -> None:
+    def test_truncate_short_text(self, mock_llm_client: Mock, temp_prompt_file: Path) -> None:
         """Test that short text is not truncated."""
         pipeline = SummarizationPipeline(
             llm_client=mock_llm_client,
@@ -172,9 +168,7 @@ class TestTruncateText:
         assert result == text
         assert was_truncated is False
 
-    def test_truncate_long_text(
-        self, mock_llm_client: Mock, temp_prompt_file: Path
-    ) -> None:
+    def test_truncate_long_text(self, mock_llm_client: Mock, temp_prompt_file: Path) -> None:
         """Test that long text is truncated at word boundary."""
         pipeline = SummarizationPipeline(
             llm_client=mock_llm_client,
@@ -259,7 +253,7 @@ class TestFormatIssuePrompt:
             id=99,
             author=None,
             body="Comment from deleted user",
-            created_at=datetime(2024, 1, 1, tzinfo=timezone.utc),
+            created_at=datetime(2024, 1, 1, tzinfo=UTC),
             reactions={},
         )
         issue = sample_issue.model_copy(update={"comments": [comment]})
@@ -306,9 +300,7 @@ class TestParseResponse:
             )
         }
 
-        mock_llm_client.parse_json_response.return_value = json.loads(
-            llm_response["response"]
-        )
+        mock_llm_client.parse_json_response.return_value = json.loads(llm_response["response"])
 
         result = pipeline._parse_llm_response(sample_issue, llm_response)
 
@@ -343,9 +335,7 @@ class TestParseResponse:
             )
         }
 
-        mock_llm_client.parse_json_response.return_value = json.loads(
-            llm_response["response"]
-        )
+        mock_llm_client.parse_json_response.return_value = json.loads(llm_response["response"])
 
         with pytest.raises(SummarizationError, match="missing required fields"):
             pipeline._parse_llm_response(sample_issue, llm_response)
@@ -378,9 +368,7 @@ class TestParseResponse:
             )
         }
 
-        mock_llm_client.parse_json_response.return_value = json.loads(
-            llm_response["response"]
-        )
+        mock_llm_client.parse_json_response.return_value = json.loads(llm_response["response"])
 
         with pytest.raises(SummarizationError, match="Invalid summary data"):
             pipeline._parse_llm_response(sample_issue, llm_response)
@@ -584,9 +572,7 @@ class TestSummarizeIssues:
         sample_issue: NormalizedIssue,
     ) -> None:
         """Test summarizing multiple issues."""
-        issue2 = sample_issue.model_copy(
-            update={"id": 456, "number": 43, "title": "Another issue"}
-        )
+        issue2 = sample_issue.model_copy(update={"id": 456, "number": 43, "title": "Another issue"})
         issues = [sample_issue, issue2]
 
         pipeline = SummarizationPipeline(
@@ -614,9 +600,7 @@ class TestSummarizeIssues:
             }
 
         mock_llm_client.generate.side_effect = mock_generate
-        mock_llm_client.parse_json_response.side_effect = lambda r: json.loads(
-            r["response"]
-        )
+        mock_llm_client.parse_json_response.side_effect = lambda r: json.loads(r["response"])
 
         results = pipeline.summarize_issues(issues)
 
@@ -656,9 +640,7 @@ class TestSummarizeIssues:
             "done": True,
         }
         mock_llm_client.generate.return_value = mock_llm_response
-        mock_llm_client.parse_json_response.return_value = json.loads(
-            mock_llm_response["response"]
-        )
+        mock_llm_client.parse_json_response.return_value = json.loads(mock_llm_response["response"])
 
         results = pipeline.summarize_issues(issues, skip_noise=True)
 
@@ -708,9 +690,7 @@ class TestSummarizeIssues:
             raise OllamaError("Failed")
 
         mock_llm_client.generate.side_effect = mock_generate
-        mock_llm_client.parse_json_response.side_effect = lambda r: json.loads(
-            r["response"]
-        )
+        mock_llm_client.parse_json_response.side_effect = lambda r: json.loads(r["response"])
 
         results = pipeline.summarize_issues(issues)
 

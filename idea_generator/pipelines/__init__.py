@@ -15,6 +15,6 @@
 Pipeline components for processing issues through LLM personas.
 """
 
-from .summarize import SummarizationPipeline, SummarizationError
+from .summarize import SummarizationError, SummarizationPipeline
 
 __all__ = ["SummarizationPipeline", "SummarizationError"]

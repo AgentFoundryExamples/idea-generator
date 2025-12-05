@@ -126,13 +126,13 @@ class OllamaClient:
             payload["format"] = format
 
         # Retry loop with exponential backoff
-        last_exception = None
+        last_exception: Exception | None = None
         for attempt in range(self.max_retries):
             try:
                 response = self.client.post("/api/generate", json=payload)
                 response.raise_for_status()
 
-                result = response.json()
+                result: dict[str, Any] = response.json()
                 return result
 
             except httpx.HTTPStatusError as e:
@@ -146,9 +146,7 @@ class OllamaClient:
                     # Last retry exhausted for server error
                     break
                 # Client error - don't retry
-                raise OllamaError(
-                    f"HTTP {e.response.status_code}: {e.response.text}"
-                ) from e
+                raise OllamaError(f"HTTP {e.response.status_code}: {e.response.text}") from e
 
             except httpx.TimeoutException as e:
                 last_exception = e
@@ -173,9 +171,7 @@ class OllamaClient:
                 raise OllamaError(f"Invalid JSON response: {e}") from e
 
         # All retries exhausted
-        raise OllamaError(
-            f"Request failed after {self.max_retries} retries: {last_exception}"
-        )
+        raise OllamaError(f"Request failed after {self.max_retries} retries: {last_exception}")
 
     def parse_json_response(self, response: dict[str, Any]) -> dict[str, Any]:
         """
@@ -199,7 +195,8 @@ class OllamaClient:
 
         try:
             # Try to parse as JSON
-            return json.loads(response_text)
+            parsed: dict[str, Any] = json.loads(response_text)
+            return parsed
         except json.JSONDecodeError as e:
             # Try to extract JSON from markdown code blocks
             import re
@@ -208,7 +205,8 @@ class OllamaClient:
             json_match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", response_text, re.DOTALL)
             if json_match:
                 try:
-                    return json.loads(json_match.group(1))
+                    parsed_from_block: dict[str, Any] = json.loads(json_match.group(1))
+                    return parsed_from_block
                 except json.JSONDecodeError:
                     pass
 
@@ -216,7 +214,8 @@ class OllamaClient:
             json_match = re.search(r"\{.*\}", response_text, re.DOTALL)
             if json_match:
                 try:
-                    return json.loads(json_match.group(0))
+                    parsed_raw: dict[str, Any] = json.loads(json_match.group(0))
+                    return parsed_raw
                 except json.JSONDecodeError:
                     pass
 

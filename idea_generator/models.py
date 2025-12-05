@@ -110,9 +110,7 @@ class SummarizedIssue(BaseModel):
         ge=0.0,
         le=1.0,
     )
-    noise_flag: bool = Field(
-        description="Flag indicating if this issue is likely spam/low-quality"
-    )
+    noise_flag: bool = Field(description="Flag indicating if this issue is likely spam/low-quality")
     raw_issue_url: str = Field(description="GitHub issue URL (from NormalizedIssue)")
 
     @field_validator("title")
