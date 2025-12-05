@@ -90,8 +90,8 @@ def generate_json_report(
         output_path.parent.mkdir(parents=True, exist_ok=True)
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(clusters_with_scores, f, indent=2, ensure_ascii=False)
-    except (IOError, PermissionError) as e:
-        raise IOError(f"Failed to write JSON report to {output_path}: {e}") from e
+    except (OSError, PermissionError) as e:
+        raise OSError(f"Failed to write JSON report to {output_path}: {e}") from e
 
 
 def generate_markdown_report(
@@ -141,7 +141,7 @@ def generate_markdown_report(
         "This report summarizes the highest-priority ideas derived from GitHub issues.",
         f"Generated from {len(issues)} issues, grouped into {len(clusters)} clusters.",
         "",
-        f"## Scoring Configuration",
+        "## Scoring Configuration",
         "",
         f"- **Novelty Weight**: {weight_novelty:.2f}",
         f"- **Feasibility Weight**: {weight_feasibility:.2f}",
@@ -200,8 +200,8 @@ def generate_markdown_report(
         output_path.parent.mkdir(parents=True, exist_ok=True)
         with open(output_path, "w", encoding="utf-8") as f:
             f.write("\n".join(lines))
-    except (IOError, PermissionError) as e:
-        raise IOError(f"Failed to write Markdown report to {output_path}: {e}") from e
+    except (OSError, PermissionError) as e:
+        raise OSError(f"Failed to write Markdown report to {output_path}: {e}") from e
 
 
 def _get_priority_tag(composite_score: float, cluster: IdeaCluster) -> str:
