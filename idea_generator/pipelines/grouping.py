@@ -296,7 +296,9 @@ class GroupingPipeline:
             retained_ids = [
                 iid
                 for iid in cluster.member_issue_ids
-                if iid not in conflicts or issue_assignments.get(iid) == cluster.cluster_id
+                if self._should_retain_issue_in_cluster(
+                    iid, conflicts, issue_assignments, cluster.cluster_id
+                )
             ]
 
             if not retained_ids:
@@ -317,6 +319,29 @@ class GroupingPipeline:
             resolved_clusters.append(cluster)
 
         return resolved_clusters
+
+    def _should_retain_issue_in_cluster(
+        self,
+        issue_id: int,
+        conflicts: set[int],
+        issue_assignments: dict[int, str],
+        cluster_id: str,
+    ) -> bool:
+        """
+        Determine if an issue should be retained in a cluster during conflict resolution.
+
+        Args:
+            issue_id: The issue ID to check
+            conflicts: Set of conflicted issue IDs
+            issue_assignments: Map of issue ID to assigned cluster ID
+            cluster_id: The cluster ID being processed
+
+        Returns:
+            True if issue should be retained in the cluster
+        """
+        if issue_id not in conflicts:
+            return True  # Non-conflicted issues are always retained
+        return issue_assignments.get(issue_id) == cluster_id
 
     def _aggregate_metrics(self, summaries: list[SummarizedIssue]) -> dict[str, float]:
         """
@@ -404,6 +429,18 @@ class GroupingPipeline:
         # Should not reach here
         raise GroupingError("Failed to group batch after all attempts")
 
+    def _normalize_topic_for_cluster_id(self, topic_area: str) -> str:
+        """
+        Normalize a topic area string for use in cluster IDs.
+
+        Args:
+            topic_area: The raw topic area string
+
+        Returns:
+            Normalized topic string (lowercase, spaces and slashes become hyphens)
+        """
+        return topic_area.lower().replace(" ", "-").replace("/", "-")
+
     def group_summaries(
         self,
         summaries: list[SummarizedIssue],
@@ -454,7 +491,7 @@ class GroupingPipeline:
 
                 # Ensure unique cluster IDs across batches
                 for cluster in batch_clusters:
-                    topic = cluster.topic_area.lower().replace(" ", "-").replace("/", "-")
+                    topic = self._normalize_topic_for_cluster_id(cluster.topic_area)
                     seq = cluster_sequence.get(topic, 1)
 
                     # Regenerate cluster_id if needed to avoid conflicts

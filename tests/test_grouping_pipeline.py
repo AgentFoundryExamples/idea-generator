@@ -781,14 +781,6 @@ class TestGroupSummaries:
             max_batch_size=2,  # Force 3 batches (2, 2, 1)
         )
 
-        # Mock responses for each batch
-        def generate_response(**kwargs: dict) -> dict:
-            # Return empty clusters - simplified for test
-            return {
-                "response": json.dumps({"clusters": []}),  # Simplified for test
-                "done": True,
-            }
-
         # Create proper mock responses for 3 batches
         batch1_response = {
             "response": json.dumps(

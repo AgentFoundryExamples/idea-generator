@@ -706,7 +706,7 @@ def group(
         # Summary statistics
         total_issues = sum(len(c.member_issue_ids) for c in clusters)
         singleton_count = sum(1 for c in clusters if len(c.member_issue_ids) == 1)
-        avg_cluster_size = total_issues / len(clusters) if clusters else 0
+        avg_cluster_size = total_issues / len(clusters)
 
         typer.echo("✅ Grouping completed successfully!\n")
         typer.echo("Cluster Statistics:")
