@@ -1,6 +1,6 @@
 {
   "schema_version": "2.0",
-  "total_files": 21,
+  "total_files": 23,
   "files": [
     {
       "schema_version": "2.0",
@@ -39,8 +39,8 @@
       "summary": "Python command-line interface (role: cli)",
       "summary_text": "Python command-line interface (role: cli)",
       "metrics": {
-        "size_bytes": 20794,
-        "loc": 461,
+        "size_bytes": 29292,
+        "loc": 637,
         "todo_count": 0
       }
     },
@@ -53,8 +53,8 @@
       "summary": "Python configuration file (role: configuration)",
       "summary_text": "Python configuration file (role: configuration)",
       "metrics": {
-        "size_bytes": 7872,
-        "loc": 201,
+        "size_bytes": 8273,
+        "loc": 213,
         "todo_count": 0
       }
     },
@@ -109,8 +109,8 @@
       "summary": "Python data models (role: model)",
       "summary_text": "Python data models (role: model)",
       "metrics": {
-        "size_bytes": 5313,
-        "loc": 113,
+        "size_bytes": 7289,
+        "loc": 165,
         "todo_count": 0
       }
     },
@@ -125,6 +125,20 @@
       "metrics": {
         "size_bytes": 775,
         "loc": 5,
+        "todo_count": 0
+      }
+    },
+    {
+      "schema_version": "2.0",
+      "path": "idea_generator/pipelines/grouping.py",
+      "language": "Python",
+      "role": "implementation",
+      "role_justification": "general implementation file (default classification)",
+      "summary": "Python module for grouping",
+      "summary_text": "Python module for grouping",
+      "metrics": {
+        "size_bytes": 18779,
+        "loc": 374,
         "todo_count": 0
       }
     },
@@ -223,6 +237,20 @@
       "metrics": {
         "size_bytes": 12330,
         "loc": 253,
+        "todo_count": 0
+      }
+    },
+    {
+      "schema_version": "2.0",
+      "path": "tests/test_grouping_pipeline.py",
+      "language": "Python",
+      "role": "test",
+      "role_justification": "filename starts with 'test_'",
+      "summary": "Python test file (role: test)",
+      "summary_text": "Python test file (role: test)",
+      "metrics": {
+        "size_bytes": 29593,
+        "loc": 741,
         "todo_count": 0
       }
     },

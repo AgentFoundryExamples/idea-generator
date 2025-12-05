@@ -4,7 +4,7 @@ Heuristic summaries of source files based on filenames, extensions, and paths.
 
 Schema Version: 2.0
 
-Total files: 21
+Total files: 23
 
 ## idea_generator/__init__.py
 **Language:** Python  
@@ -29,8 +29,8 @@ Total files: 21
 **Role:** cli  
 **Role Justification:** CLI-related name 'cli'  
 **Summary:** Python command-line interface (role: cli)  
-**Size:** 20.31 KB  
-**LOC:** 461  
+**Size:** 28.61 KB  
+**LOC:** 637  
 **TODOs/FIXMEs:** 0  
 
 ## idea_generator/config.py
@@ -38,8 +38,8 @@ Total files: 21
 **Role:** configuration  
 **Role Justification:** configuration file name 'config'  
 **Summary:** Python configuration file (role: configuration)  
-**Size:** 7.69 KB  
-**LOC:** 201  
+**Size:** 8.08 KB  
+**LOC:** 213  
 **TODOs/FIXMEs:** 0  
 
 ## idea_generator/github_client.py
@@ -74,8 +74,8 @@ Total files: 21
 **Role:** model  
 **Role Justification:** model/schema name 'models'  
 **Summary:** Python data models (role: model)  
-**Size:** 5.19 KB  
-**LOC:** 113  
+**Size:** 7.12 KB  
+**LOC:** 165  
 **TODOs/FIXMEs:** 0  
 
 ## idea_generator/pipelines/__init__.py
@@ -85,6 +85,15 @@ Total files: 21
 **Summary:** Python module initialization (role: module-init)  
 **Size:** 0.76 KB  
 **LOC:** 5  
+**TODOs/FIXMEs:** 0  
+
+## idea_generator/pipelines/grouping.py
+**Language:** Python  
+**Role:** implementation  
+**Role Justification:** general implementation file (default classification)  
+**Summary:** Python module for grouping  
+**Size:** 18.34 KB  
+**LOC:** 374  
 **TODOs/FIXMEs:** 0  
 
 ## idea_generator/pipelines/summarize.py
@@ -148,6 +157,15 @@ Total files: 21
 **Summary:** Python test file (role: test)  
 **Size:** 12.04 KB  
 **LOC:** 253  
+**TODOs/FIXMEs:** 0  
+
+## tests/test_grouping_pipeline.py
+**Language:** Python  
+**Role:** test  
+**Role Justification:** filename starts with 'test_'  
+**Summary:** Python test file (role: test)  
+**Size:** 28.90 KB  
+**LOC:** 741  
 **TODOs/FIXMEs:** 0  
 
 ## tests/test_integration.py

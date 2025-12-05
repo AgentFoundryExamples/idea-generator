@@ -18,11 +18,13 @@
 ├── idea_generator
   ├── llm
     ├── prompts
+      ├── grouper.txt
       └── summarizer.txt
     ├── __init__.py
     └── client.py
   ├── pipelines
     ├── __init__.py
+    ├── grouping.py
     └── summarize.py
   ├── __init__.py
   ├── cleaning.py
@@ -37,6 +39,7 @@
   ├── test_cli.py
   ├── test_config.py
   ├── test_github_client.py
+  ├── test_grouping_pipeline.py
   ├── test_integration.py
   ├── test_llm_client.py
   ├── test_models.py

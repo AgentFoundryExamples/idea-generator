@@ -119,6 +119,22 @@
       }
     },
     {
+      "id": "idea_generator/pipelines/grouping.py",
+      "path": "idea_generator/pipelines/grouping.py",
+      "type": "file",
+      "external_dependencies": {
+        "stdlib": [
+          "json",
+          "logging",
+          "pathlib.Path",
+          "typing.Any"
+        ],
+        "third-party": [
+          "pydantic.ValidationError"
+        ]
+      }
+    },
+    {
       "id": "idea_generator/pipelines/summarize.py",
       "path": "idea_generator/pipelines/summarize.py",
       "type": "file",
@@ -219,6 +235,22 @@
         ],
         "third-party": [
           "httpx",
+          "pytest"
+        ]
+      }
+    },
+    {
+      "id": "tests/test_grouping_pipeline.py",
+      "path": "tests/test_grouping_pipeline.py",
+      "type": "file",
+      "external_dependencies": {
+        "stdlib": [
+          "json",
+          "pathlib.Path",
+          "tempfile.TemporaryDirectory",
+          "unittest.mock.Mock"
+        ],
+        "third-party": [
           "pytest"
         ]
       }
@@ -328,6 +360,18 @@
     {
       "source": "tests/test_github_client.py",
       "target": "idea_generator/github_client.py"
+    },
+    {
+      "source": "tests/test_grouping_pipeline.py",
+      "target": "idea_generator/llm/client.py"
+    },
+    {
+      "source": "tests/test_grouping_pipeline.py",
+      "target": "idea_generator/models.py"
+    },
+    {
+      "source": "tests/test_grouping_pipeline.py",
+      "target": "idea_generator/pipelines/grouping.py"
     },
     {
       "source": "tests/test_integration.py",
