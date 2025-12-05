@@ -134,6 +134,15 @@ def truncate_text(
     Returns:
         Tuple of (truncated_issue_body, truncated_comments, original_length)
     """
+    # Validate minimum max_length
+    truncation_marker = "... [truncated]"
+    min_required_length = len(truncation_marker) * 2 + 10  # Marker + some content
+    if max_length < min_required_length:
+        raise ValueError(
+            f"max_length ({max_length}) must be at least {min_required_length} "
+            f"to accommodate truncation markers and minimal content"
+        )
+
     # Calculate original length
     original_length = len(issue_body) + sum(len(c.body) for c in comments)
 

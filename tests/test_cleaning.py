@@ -16,6 +16,8 @@ limitations under the License.
 
 from datetime import datetime
 
+import pytest
+
 from idea_generator.cleaning import (
     clean_markdown,
     deduplicate_comments,
@@ -190,6 +192,19 @@ class TestTruncateText:
         ]
         _, _, original_length = truncate_text(issue_body, comments, 8000)
         assert original_length == 10000
+
+    def test_truncate_validates_minimum_length(self) -> None:
+        """Test that truncate_text validates minimum max_length."""
+        issue_body = "Some body"
+        comments = []
+
+        # max_length too small should raise ValueError
+        with pytest.raises(ValueError, match="max_length.*must be at least"):
+            truncate_text(issue_body, comments, 10)
+
+        # Acceptable minimum should work
+        body, _, _ = truncate_text(issue_body, comments, 50)
+        assert body == "Some body"
 
 
 class TestIsNoiseIssue:

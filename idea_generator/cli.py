@@ -234,8 +234,9 @@ def ingest(
                 try:
                     comments = client.fetch_issue_comments(owner, repo, issue_number)
                 except GitHubAPIError as e:
-                    typer.echo(f" ⚠ Warning: Failed to fetch comments: {e}")
+                    typer.echo(f"\n  ⚠ Warning: Failed to fetch comments: {e}")
                     comments = []
+                    typer.echo(f"  [{i}/{len(issues)}] Issue #{issue_number}...", nl=False)
 
                 # Normalize issue
                 normalized = normalize_github_issue(

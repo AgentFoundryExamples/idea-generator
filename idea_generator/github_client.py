@@ -117,13 +117,29 @@ class GitHubClient:
             response = self.client.request(method, url, params=params)
 
             # Handle rate limiting with exponential backoff
-            if response.status_code == 403 and "rate limit" in response.text.lower():
-                if retry_count < self.max_retries:
-                    retry_after = int(response.headers.get("Retry-After", "60"))
+            if response.status_code == 403:
+                # Check if it's a rate limit error using headers
+                rate_limit_remaining = response.headers.get("X-RateLimit-Remaining")
+                is_rate_limited = (
+                    rate_limit_remaining == "0" or "rate limit" in response.text.lower()
+                )
+
+                if is_rate_limited and retry_count < self.max_retries:
+                    # Use Retry-After header if available, otherwise exponential backoff
+                    retry_after_header = response.headers.get("Retry-After")
+                    if retry_after_header:
+                        try:
+                            retry_after = int(retry_after_header)
+                        except ValueError:
+                            retry_after = 60
+                    else:
+                        retry_after = 60
+
                     wait_time = min(retry_after, 2 ** (retry_count + 1))
                     time.sleep(wait_time)
                     return self._request(method, endpoint, params, retry_count + 1)
-                raise GitHubAPIError("Rate limit exceeded and max retries reached")
+                elif is_rate_limited:
+                    raise GitHubAPIError("Rate limit exceeded and max retries reached")
 
             # Handle other errors with exponential backoff
             if response.status_code >= 500:
