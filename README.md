@@ -248,7 +248,124 @@ Normalized issues are saved to `data/owner_repo_issues.json` with this structure
 - **API errors**: 410 (Gone) on deleted comments returns empty object; 403/404 errors are retried or skipped
 - **Private repos**: Insufficient token scopes raise actionable errors
 
-### Step 3: Generate Ideas (Coming Soon)
+### Step 3: Summarize Issues with LLM Persona
+
+```bash
+idea-generator summarize --github-repo owner/repo
+```
+
+This command:
+- ✓ Loads normalized issues from the data directory
+- ✓ Processes each issue sequentially through the summarizer LLM persona
+- ✓ Generates structured summaries with quantitative metrics
+- ✓ Caches results to avoid redundant LLM API calls
+- ✓ Saves summarized issues to the output directory
+
+**Options:**
+- `--github-repo`, `-r`: GitHub repository in format 'owner/repo' (required)
+- `--data-dir`, `-d`: Data directory containing normalized issues (default: ./data)
+- `--output-dir`, `-o`: Output directory for summaries (default: ./output)
+- `--ollama-host`: Ollama server host (default: http://localhost)
+- `--ollama-port`: Ollama server port (default: 11434)
+- `--model-innovator`: Model to use for summarization (default: llama3.2:latest)
+- `--skip-cache`: Bypass cache and regenerate all summaries
+- `--skip-noise`: Skip issues already flagged as noise
+
+**Examples:**
+
+```bash
+# Summarize issues from a repository
+idea-generator summarize --github-repo facebook/react
+
+# Use a different model
+idea-generator summarize --github-repo owner/repo --model-innovator llama3.2:8b
+
+# Regenerate all summaries (bypass cache)
+idea-generator summarize --github-repo owner/repo --skip-cache
+
+# Skip noise issues
+idea-generator summarize --github-repo owner/repo --skip-noise
+```
+
+**Summarizer Persona Behavior:**
+
+The summarizer uses a 3-8B parameter model (e.g., `llama3.2:latest`) running locally through Ollama. It analyzes each normalized issue independently to avoid context ballooning and generates:
+
+1. **Condensed Summary**: 2-3 sentence summary of the issue and key discussion points
+2. **Topic Classification**: Primary area (e.g., performance, security, UI/UX, bug, feature)
+3. **Quantitative Metrics** (0.0-1.0 scale):
+   - **Novelty**: How innovative or unique is this idea
+   - **Feasibility**: How practical to implement given typical constraints
+   - **Desirability**: How valuable to users/stakeholders
+   - **Attention**: Community engagement level (reactions, comments)
+4. **Noise Flag**: Whether issue is likely spam/low-quality
+
+**Context and Batching:**
+
+- **Sequential Processing**: Issues are processed one at a time to prevent context overflow
+- **Token Budget**: Each issue is limited to ~4000 tokens (configurable via `IDEA_GEN_SUMMARIZATION_MAX_TOKENS`)
+- **Truncation**: Long issue bodies and comments are truncated deterministically with metadata preserved
+- **Progress Logging**: Real-time feedback on processing status
+- **Caching**: Successful summaries are cached by issue ID to enable resumption after failures
+
+**Configuration Keys:**
+
+Environment variables (set in `.env` or system environment):
+
+```bash
+# Summarization-specific configuration
+IDEA_GEN_SUMMARIZATION_MAX_TOKENS=4000   # Max tokens per issue (~4 chars/token)
+IDEA_GEN_LLM_TIMEOUT=120.0               # LLM request timeout (seconds)
+IDEA_GEN_LLM_MAX_RETRIES=3               # Max retry attempts for failed requests
+```
+
+**Output Format:**
+
+Summaries are saved to `output/owner_repo_summaries.json`:
+
+```json
+[
+  {
+    "issue_id": 123456789,
+    "source_number": 42,
+    "title": "Add dark mode support",
+    "summary": "Users request dark mode to reduce eye strain during night use. Discussion suggests CSS variables for theming. Strong community support.",
+    "topic_area": "UI/UX",
+    "novelty": 0.3,
+    "feasibility": 0.8,
+    "desirability": 0.9,
+    "attention": 0.7,
+    "noise_flag": false,
+    "raw_issue_url": "https://github.com/owner/repo/issues/42"
+  }
+]
+```
+
+**Edge Cases:**
+
+- **Malformed JSON**: LLM responses are validated and parsed with fallback extraction from markdown code blocks
+- **Missing Metrics**: Issues with incomplete LLM responses are retried up to 3 times before being marked as failed
+- **Truncation**: Issues exceeding token limits are truncated deterministically with metadata preserved for debugging
+- **LLM Unavailable**: Connection failures trigger actionable error messages with retry suggestions
+- **Noise Issues**: Can be automatically skipped using `--skip-noise` flag
+
+**Important Notes:**
+
+⚠️ **LLM Execution**: This command requires a running Ollama server with the specified model pulled. Ensure Ollama is running before executing:
+
+```bash
+# Start Ollama server
+ollama serve
+
+# Pull required model (if not already installed)
+ollama pull llama3.2:latest
+```
+
+⚠️ **Processing Time**: Summarization is performed sequentially and can take several minutes for large repositories (1-2 seconds per issue for 3-8B models). Progress is logged in real-time.
+
+⚠️ **No Batch Processing**: Issues are intentionally processed one at a time to avoid context overflow with small models. This is by design for deterministic, per-issue summaries.
+
+### Step 4: Generate Ideas (Coming Soon)
 
 ```bash
 idea-generator run --github-repo owner/repo
@@ -262,10 +379,27 @@ idea-generator/
 │   ├── __init__.py          # Package initialization
 │   ├── cli.py               # CLI interface (Typer commands)
 │   ├── config.py            # Configuration management
-│   └── setup.py             # Setup workflow and Ollama integration
+│   ├── models.py            # Pydantic models (NormalizedIssue, SummarizedIssue)
+│   ├── setup.py             # Setup workflow and Ollama integration
+│   ├── cleaning.py          # Issue cleaning and normalization
+│   ├── github_client.py     # GitHub API client with caching
+│   ├── llm/                 # LLM integration components
+│   │   ├── __init__.py     # LLM module initialization
+│   │   ├── client.py        # Ollama HTTP client wrapper
+│   │   └── prompts/         # LLM persona prompts
+│   │       └── summarizer.txt  # Summarizer persona system prompt
+│   └── pipelines/           # Processing pipelines
+│       ├── __init__.py     # Pipeline module initialization
+│       └── summarize.py     # Summarization pipeline
 ├── tests/                   # Test suite
 │   ├── test_config.py       # Configuration tests
+│   ├── test_models.py       # Model validation tests
 │   ├── test_setup.py        # Setup workflow tests
+│   ├── test_cleaning.py     # Data cleaning tests
+│   ├── test_github_client.py # GitHub API client tests
+│   ├── test_llm_client.py   # LLM client tests
+│   ├── test_summarize_pipeline.py  # Summarization pipeline tests
+│   ├── test_integration.py  # End-to-end integration tests
 │   └── test_cli.py          # CLI integration tests
 ├── output/                  # Generated ideas and reports (created by setup)
 ├── data/                    # Ingested repository data (created by setup)

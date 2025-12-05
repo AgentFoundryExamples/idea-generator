@@ -16,7 +16,9 @@ limitations under the License.
 
 from datetime import datetime
 
-from idea_generator.models import NormalizedComment, NormalizedIssue
+import pytest
+
+from idea_generator.models import NormalizedComment, NormalizedIssue, SummarizedIssue
 
 
 class TestNormalizedComment:
@@ -157,3 +159,147 @@ class TestNormalizedIssue:
         )
         assert issue.truncated is True
         assert issue.original_length == 15000
+
+
+class TestSummarizedIssue:
+    """Test suite for SummarizedIssue model."""
+
+    def test_summarized_issue_creation(self) -> None:
+        """Test creating a SummarizedIssue."""
+        summary = SummarizedIssue(
+            issue_id=123456,
+            source_number=42,
+            title="Add dark mode",
+            summary="Users request dark mode for better night-time viewing.",
+            topic_area="UI/UX",
+            novelty=0.3,
+            feasibility=0.8,
+            desirability=0.9,
+            attention=0.7,
+            noise_flag=False,
+            raw_issue_url="https://github.com/owner/repo/issues/42",
+        )
+        assert summary.issue_id == 123456
+        assert summary.source_number == 42
+        assert summary.title == "Add dark mode"
+        assert summary.topic_area == "UI/UX"
+        assert summary.novelty == 0.3
+        assert summary.noise_flag is False
+
+    def test_summarized_issue_metric_bounds(self) -> None:
+        """Test that metrics are validated within 0.0-1.0 range."""
+        # Valid metrics
+        summary = SummarizedIssue(
+            issue_id=123,
+            source_number=1,
+            title="Test",
+            summary="Test summary",
+            topic_area="test",
+            novelty=0.0,
+            feasibility=1.0,
+            desirability=0.5,
+            attention=0.3,
+            noise_flag=False,
+            raw_issue_url="https://github.com/test/test/issues/1",
+        )
+        assert summary.novelty == 0.0
+        assert summary.feasibility == 1.0
+
+        # Invalid: below 0.0
+        with pytest.raises(ValueError):
+            SummarizedIssue(
+                issue_id=123,
+                source_number=1,
+                title="Test",
+                summary="Test",
+                topic_area="test",
+                novelty=-0.1,
+                feasibility=0.5,
+                desirability=0.5,
+                attention=0.5,
+                noise_flag=False,
+                raw_issue_url="https://github.com/test/test/issues/1",
+            )
+
+        # Invalid: above 1.0
+        with pytest.raises(ValueError):
+            SummarizedIssue(
+                issue_id=123,
+                source_number=1,
+                title="Test",
+                summary="Test",
+                topic_area="test",
+                novelty=0.5,
+                feasibility=1.5,
+                desirability=0.5,
+                attention=0.5,
+                noise_flag=False,
+                raw_issue_url="https://github.com/test/test/issues/1",
+            )
+
+    def test_summarized_issue_title_truncation(self) -> None:
+        """Test that title is automatically truncated to 100 chars."""
+        long_title = "A" * 150
+        summary = SummarizedIssue(
+            issue_id=123,
+            source_number=1,
+            title=long_title,
+            summary="Test summary",
+            topic_area="test",
+            novelty=0.5,
+            feasibility=0.5,
+            desirability=0.5,
+            attention=0.5,
+            noise_flag=False,
+            raw_issue_url="https://github.com/test/test/issues/1",
+        )
+        assert len(summary.title) == 100
+
+    def test_summarized_issue_empty_summary_validation(self) -> None:
+        """Test that empty summary is rejected."""
+        with pytest.raises(ValueError, match="Summary cannot be empty"):
+            SummarizedIssue(
+                issue_id=123,
+                source_number=1,
+                title="Test",
+                summary="",
+                topic_area="test",
+                novelty=0.5,
+                feasibility=0.5,
+                desirability=0.5,
+                attention=0.5,
+                noise_flag=False,
+                raw_issue_url="https://github.com/test/test/issues/1",
+            )
+
+        with pytest.raises(ValueError, match="Summary cannot be empty"):
+            SummarizedIssue(
+                issue_id=123,
+                source_number=1,
+                title="Test",
+                summary="   ",
+                topic_area="test",
+                novelty=0.5,
+                feasibility=0.5,
+                desirability=0.5,
+                attention=0.5,
+                noise_flag=False,
+                raw_issue_url="https://github.com/test/test/issues/1",
+            )
+
+    def test_summarized_issue_noise_flagging(self) -> None:
+        """Test noise flag on summarized issue."""
+        summary = SummarizedIssue(
+            issue_id=999,
+            source_number=1,
+            title="spam",
+            summary="Spam content detected",
+            topic_area="spam",
+            novelty=0.0,
+            feasibility=0.0,
+            desirability=0.0,
+            attention=0.0,
+            noise_flag=True,
+            raw_issue_url="https://github.com/test/test/issues/1",
+        )
+        assert summary.noise_flag is True

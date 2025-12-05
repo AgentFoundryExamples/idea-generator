@@ -16,7 +16,7 @@ limitations under the License.
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class NormalizedComment(BaseModel):
@@ -72,3 +72,61 @@ class NormalizedIssue(BaseModel):
         default=0,
         description="Original combined length before truncation",
     )
+
+
+class SummarizedIssue(BaseModel):
+    """
+    Summarized representation of a GitHub issue with LLM-generated metrics.
+
+    This model captures the output of the first Ollama persona (summarizer),
+    which analyzes normalized issues and produces condensed summaries with
+    quantitative metrics for ranking and filtering.
+    """
+
+    issue_id: int = Field(description="GitHub issue ID (from NormalizedIssue)")
+    source_number: int = Field(description="Issue number in the repository")
+    title: str = Field(description="Condensed title (max 100 chars)")
+    summary: str = Field(description="2-3 sentence summary of the issue")
+    topic_area: str = Field(
+        description="Primary topic area (e.g., performance, security, UI/UX, bug, feature)"
+    )
+    novelty: float = Field(
+        description="Novelty metric (0.0-1.0): how innovative or unique is this idea",
+        ge=0.0,
+        le=1.0,
+    )
+    feasibility: float = Field(
+        description="Feasibility metric (0.0-1.0): how practical to implement",
+        ge=0.0,
+        le=1.0,
+    )
+    desirability: float = Field(
+        description="Desirability metric (0.0-1.0): how valuable to users/stakeholders",
+        ge=0.0,
+        le=1.0,
+    )
+    attention: float = Field(
+        description="Attention metric (0.0-1.0): community engagement level",
+        ge=0.0,
+        le=1.0,
+    )
+    noise_flag: bool = Field(
+        description="Flag indicating if this issue is likely spam/low-quality"
+    )
+    raw_issue_url: str = Field(description="GitHub issue URL (from NormalizedIssue)")
+
+    @field_validator("title")
+    @classmethod
+    def validate_title_length(cls, v: str) -> str:
+        """Ensure title doesn't exceed 100 characters."""
+        if len(v) > 100:
+            return v[:100]
+        return v
+
+    @field_validator("summary")
+    @classmethod
+    def validate_summary_not_empty(cls, v: str) -> str:
+        """Ensure summary is not empty."""
+        if not v or not v.strip():
+            raise ValueError("Summary cannot be empty")
+        return v
