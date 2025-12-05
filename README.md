@@ -480,11 +480,143 @@ ollama list | grep llama3.2
 
 ⚠️ **Batch Processing**: Unlike summarization, grouping uses batches to process multiple issues simultaneously within context limits.
 
-### Step 5: Generate Ideas (Coming Soon)
+### Step 5: Rank and Generate Reports
 
 ```bash
 idea-generator run --github-repo owner/repo
 ```
+
+This command orchestrates the complete end-to-end pipeline:
+1. **Ingest** issues from GitHub (or reuse cached data)
+2. **Summarize** issues with LLM (or reuse cached summaries)
+3. **Group** summaries into clusters (or reuse cached clusters)
+4. **Rank** clusters by composite score with deterministic tie-breaking
+5. **Generate** JSON and Markdown reports in `output/reports/`
+
+**Options:**
+- `--github-repo`, `-r`: GitHub repository in format 'owner/repo' (required)
+- `--github-token`, `-t`: GitHub API token (optional)
+- `--output-dir`, `-o`: Output directory (default: ./output)
+- `--data-dir`, `-d`: Data directory (default: ./data)
+- `--ollama-host`: Ollama server host (default: http://localhost)
+- `--ollama-port`: Ollama server port (default: 11434)
+- `--model-innovator`: Model for LLM operations (default: llama3.2:latest)
+- `--force`: Regenerate all artifacts, skip cached data
+- `--skip-json`: Skip JSON report generation
+- `--skip-markdown`: Skip Markdown report generation
+- `--top-ideas`: Number of top ideas in Markdown report (default: 10)
+
+**Examples:**
+
+```bash
+# Full pipeline with default settings
+idea-generator run --github-repo facebook/react
+
+# Force regeneration (ignore cache)
+idea-generator run --github-repo owner/repo --force
+
+# Generate only JSON report
+idea-generator run --github-repo owner/repo --skip-markdown
+
+# Custom top N ideas in Markdown
+idea-generator run --github-repo owner/repo --top-ideas 15
+
+# JSON-only mode (automation-friendly)
+idea-generator run --github-repo owner/repo --skip-markdown
+```
+
+**Caching and Resumption:**
+
+The pipeline caches intermediate artifacts to enable resumption after failures:
+- `data/owner_repo_issues.json`: Normalized issues from GitHub
+- `output/owner_repo_summaries.json`: LLM-generated summaries
+- `output/owner_repo_clusters.json`: Grouped idea clusters
+- `output/summarization_cache/`: Individual summary cache files
+
+By default, the pipeline reuses cached artifacts if they exist. Use `--force` to regenerate everything from scratch.
+
+**Output Reports:**
+
+Two reports are generated in `output/reports/`:
+
+1. **ideas.json**: Complete dataset with all clusters, including:
+   - Normalized metrics (novelty, feasibility, desirability, attention)
+   - Composite scores (weighted combination of metrics)
+   - Noise indicators (flagged from source issues)
+   - Source issue URLs for traceability
+
+2. **top-ideas.md**: Human-readable report with top N ranked clusters, including:
+   - Cluster summaries and topic areas
+   - Metric breakdowns with visual indicators
+   - Priority tags (🔥 Critical, ⭐ High, ✅ Medium, 💡 Low)
+   - Links to source GitHub issues
+
+**Scoring and Ranking:**
+
+Ideas are ranked using a weighted composite score:
+
+```
+composite_score = (novelty × w_n) + (feasibility × w_f) + 
+                  (desirability × w_d) + (attention × w_a)
+```
+
+Default weights (configurable via environment variables):
+- **Novelty**: 0.25 (how innovative or unique the idea is)
+- **Feasibility**: 0.25 (how practical to implement)
+- **Desirability**: 0.30 (how valuable to users/stakeholders)
+- **Attention**: 0.20 (community engagement level)
+
+Tie-breaking is deterministic:
+1. Primary: Composite score (descending)
+2. Secondary: Desirability (descending)
+3. Tertiary: Feasibility (descending)
+4. Final: Title (ascending alphabetically)
+
+**Customizing Weights:**
+
+Override default weights in `.env`:
+
+```bash
+# Emphasize desirability and feasibility
+IDEA_GEN_RANKING_WEIGHT_NOVELTY=0.15
+IDEA_GEN_RANKING_WEIGHT_FEASIBILITY=0.35
+IDEA_GEN_RANKING_WEIGHT_DESIRABILITY=0.40
+IDEA_GEN_RANKING_WEIGHT_ATTENTION=0.10
+
+# How many top ideas to include in Markdown report
+IDEA_GEN_TOP_IDEAS_COUNT=20
+```
+
+Weights must sum to 1.0 (±0.01 tolerance). The pipeline validates this at runtime.
+
+**Edge Cases Handled:**
+
+- **No open issues**: Generates empty JSON array and friendly Markdown message without errors
+- **Score ties**: Resolved deterministically using desirability, feasibility, and title for consistent ordering
+- **Missing artifacts**: Pipeline automatically detects missing cached files and regenerates them
+- **Partial failures**: If a stage fails, cached artifacts from previous stages remain intact for debugging
+
+**Important Notes:**
+
+⚠️ **LLM Execution**: This command requires a running Ollama server for the summarization and grouping stages. Ensure Ollama is running:
+
+```bash
+# Start Ollama server
+ollama serve
+
+# Verify model is available
+ollama list | grep llama3.2
+```
+
+⚠️ **Processing Time**: The full pipeline can take several minutes for large repositories:
+- Ingestion: ~1-2 seconds per 100 issues
+- Summarization: ~1-2 seconds per issue (sequential processing)
+- Grouping: ~5-10 seconds per batch of 20 issues
+- Ranking and reports: <1 second
+
+Progress is logged in real-time with stage-by-stage updates.
+
+⚠️ **Token Budget**: Ensure your GitHub token (if using a private repo) has sufficient API rate limit quota. The pipeline makes multiple API calls during ingestion.
 
 ## Project Structure
 
@@ -497,6 +629,8 @@ idea-generator/
 │   ├── models.py            # Pydantic models (NormalizedIssue, SummarizedIssue, IdeaCluster)
 │   ├── setup.py             # Setup workflow and Ollama integration
 │   ├── cleaning.py          # Issue cleaning and normalization
+│   ├── filters.py           # Scoring and ranking utilities
+│   ├── output.py            # JSON and Markdown report generation
 │   ├── github_client.py     # GitHub API client with caching
 │   ├── llm/                 # LLM integration components
 │   │   ├── __init__.py     # LLM module initialization
@@ -507,12 +641,16 @@ idea-generator/
 │   └── pipelines/           # Processing pipelines
 │       ├── __init__.py     # Pipeline module initialization
 │       ├── summarize.py     # Summarization pipeline
-│       └── grouping.py      # Grouping/clustering pipeline
+│       ├── grouping.py      # Grouping/clustering pipeline
+│       └── orchestrator.py  # End-to-end pipeline orchestration
 ├── tests/                   # Test suite
 │   ├── test_config.py       # Configuration tests
 │   ├── test_models.py       # Model validation tests
 │   ├── test_setup.py        # Setup workflow tests
 │   ├── test_cleaning.py     # Data cleaning tests
+│   ├── test_filters.py      # Scoring and ranking tests
+│   ├── test_output.py       # Report generation tests
+│   ├── test_orchestrator.py # Orchestration pipeline tests
 │   ├── test_github_client.py # GitHub API client tests
 │   ├── test_llm_client.py   # LLM client tests
 │   ├── test_summarize_pipeline.py  # Summarization pipeline tests
@@ -520,6 +658,9 @@ idea-generator/
 │   ├── test_integration.py  # End-to-end integration tests
 │   └── test_cli.py          # CLI integration tests
 ├── output/                  # Generated ideas and reports (created by setup)
+│   └── reports/             # Final JSON and Markdown reports
+│       ├── ideas.json       # Complete dataset with all clusters
+│       └── top-ideas.md     # Human-readable top N ideas
 ├── data/                    # Ingested repository data (created by setup)
 ├── personas/                # Persona metadata and prompts (created by setup)
 ├── pyproject.toml          # Package configuration and dependencies
