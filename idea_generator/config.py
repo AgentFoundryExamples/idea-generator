@@ -29,8 +29,11 @@ limitations under the License.
 
 from pathlib import Path
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Tolerance for weight validation (weights must sum to 1.0 ± this value)
+WEIGHT_SUM_TOLERANCE = 0.01
 
 
 class Config(BaseSettings):
@@ -165,6 +168,38 @@ class Config(BaseSettings):
         le=200000,
     )
 
+    # Scoring/Ranking configuration
+    ranking_weight_novelty: float = Field(
+        default=0.25,
+        description="Weight for novelty metric in composite score (0.0-1.0)",
+        ge=0.0,
+        le=1.0,
+    )
+    ranking_weight_feasibility: float = Field(
+        default=0.25,
+        description="Weight for feasibility metric in composite score (0.0-1.0)",
+        ge=0.0,
+        le=1.0,
+    )
+    ranking_weight_desirability: float = Field(
+        default=0.30,
+        description="Weight for desirability metric in composite score (0.0-1.0)",
+        ge=0.0,
+        le=1.0,
+    )
+    ranking_weight_attention: float = Field(
+        default=0.20,
+        description="Weight for attention metric in composite score (0.0-1.0)",
+        ge=0.0,
+        le=1.0,
+    )
+    top_ideas_count: int = Field(
+        default=10,
+        description="Number of top ideas to include in Markdown report",
+        ge=1,
+        le=100,
+    )
+
     # Directory configuration
     output_dir: Path = Field(
         default=Path("output"),
@@ -192,6 +227,22 @@ class Config(BaseSettings):
     def resolve_path(cls, v: Path) -> Path:
         """Resolve paths to absolute paths."""
         return v.resolve()
+
+    @model_validator(mode="after")
+    def validate_weights(self) -> "Config":
+        """Validate that ranking weights sum to approximately 1.0."""
+        total = (
+            self.ranking_weight_novelty
+            + self.ranking_weight_feasibility
+            + self.ranking_weight_desirability
+            + self.ranking_weight_attention
+        )
+        if abs(total - 1.0) > WEIGHT_SUM_TOLERANCE:
+            raise ValueError(
+                f"Ranking weights must sum to 1.0, got {total:.2f}. "
+                "Please adjust weights accordingly."
+            )
+        return self
 
     @property
     def ollama_base_url(self) -> str:
