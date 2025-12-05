@@ -15,7 +15,6 @@ limitations under the License.
 """
 
 import json
-import subprocess
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -62,9 +61,7 @@ class TestCheckOllamaServer:
             mock_get.return_value = mock_response
 
             assert check_ollama_server("http://localhost:11434") is True
-            mock_get.assert_called_once_with(
-                "http://localhost:11434/api/tags", timeout=5.0
-            )
+            mock_get.assert_called_once_with("http://localhost:11434/api/tags", timeout=5.0)
 
     def test_server_not_accessible(self) -> None:
         """Test when Ollama server is not accessible."""
@@ -311,7 +308,9 @@ class TestRunSetup:
             with patch("idea_generator.setup.check_ollama_binary", return_value=True):
                 with patch("idea_generator.setup.check_ollama_server", return_value=True):
                     with patch("idea_generator.setup.list_installed_models", return_value=[]):
-                        with patch("idea_generator.setup.pull_model", return_value=True) as mock_pull:
+                        with patch(
+                            "idea_generator.setup.pull_model", return_value=True
+                        ) as mock_pull:
                             run_setup(config, skip_pull=False, offline=False)
 
                             # Model should only be pulled once (using set)

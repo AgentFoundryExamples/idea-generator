@@ -15,7 +15,6 @@ limitations under the License.
 """
 
 from pathlib import Path
-from typing import Optional
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -24,7 +23,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Config(BaseSettings):
     """
     Configuration for the idea-generator CLI.
-    
+
     Settings are loaded from (in priority order):
     1. CLI arguments (passed directly to commands)
     2. Environment variables (from .env file or system)
@@ -46,7 +45,7 @@ class Config(BaseSettings):
         default="",
         description="GitHub repository in format 'owner/repo'",
     )
-    github_token: Optional[str] = Field(
+    github_token: str | None = Field(
         default=None,
         description="GitHub API token for private repositories",
     )
@@ -127,45 +126,46 @@ class Config(BaseSettings):
 
 
 def load_config(
-    github_repo: Optional[str] = None,
-    github_token: Optional[str] = None,
-    ollama_host: Optional[str] = None,
-    ollama_port: Optional[int] = None,
-    model_innovator: Optional[str] = None,
-    model_critic: Optional[str] = None,
-    batch_size: Optional[int] = None,
-    max_workers: Optional[int] = None,
-    output_dir: Optional[Path] = None,
-    data_dir: Optional[Path] = None,
-    persona_dir: Optional[Path] = None,
+    github_repo: str | None = None,
+    github_token: str | None = None,
+    ollama_host: str | None = None,
+    ollama_port: int | None = None,
+    model_innovator: str | None = None,
+    model_critic: str | None = None,
+    batch_size: int | None = None,
+    max_workers: int | None = None,
+    output_dir: Path | None = None,
+    data_dir: Path | None = None,
+    persona_dir: Path | None = None,
 ) -> Config:
     """
     Load configuration from environment and CLI arguments.
-    
+
     CLI arguments override environment variables and config file values.
     """
-    overrides = {}
+    # Build kwargs explicitly to maintain type safety
+    kwargs: dict[str, str | int | Path] = {}
     if github_repo is not None:
-        overrides["github_repo"] = github_repo
+        kwargs["github_repo"] = github_repo
     if github_token is not None:
-        overrides["github_token"] = github_token
+        kwargs["github_token"] = github_token
     if ollama_host is not None:
-        overrides["ollama_host"] = ollama_host
+        kwargs["ollama_host"] = ollama_host
     if ollama_port is not None:
-        overrides["ollama_port"] = ollama_port
+        kwargs["ollama_port"] = ollama_port
     if model_innovator is not None:
-        overrides["model_innovator"] = model_innovator
+        kwargs["model_innovator"] = model_innovator
     if model_critic is not None:
-        overrides["model_critic"] = model_critic
+        kwargs["model_critic"] = model_critic
     if batch_size is not None:
-        overrides["batch_size"] = batch_size
+        kwargs["batch_size"] = batch_size
     if max_workers is not None:
-        overrides["max_workers"] = max_workers
+        kwargs["max_workers"] = max_workers
     if output_dir is not None:
-        overrides["output_dir"] = output_dir
+        kwargs["output_dir"] = output_dir
     if data_dir is not None:
-        overrides["data_dir"] = data_dir
+        kwargs["data_dir"] = data_dir
     if persona_dir is not None:
-        overrides["persona_dir"] = persona_dir
+        kwargs["persona_dir"] = persona_dir
 
-    return Config(**overrides)
+    return Config(**kwargs)  # type: ignore[arg-type]

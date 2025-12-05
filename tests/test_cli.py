@@ -16,7 +16,6 @@ limitations under the License.
 
 from unittest.mock import patch
 
-import pytest
 from typer.testing import CliRunner
 
 from idea_generator.cli import app
@@ -72,8 +71,10 @@ class TestSetupCommand:
                 app,
                 [
                     "setup",
-                    "--model-innovator", "llama3.2:70b",
-                    "--model-critic", "llama3.2:8b",
+                    "--model-innovator",
+                    "llama3.2:70b",
+                    "--model-critic",
+                    "llama3.2:8b",
                     "--skip-pull",
                 ],
             )
@@ -150,8 +151,10 @@ class TestSummarizeCommand:
             app,
             [
                 "summarize",
-                "--data-dir", "/custom/data",
-                "--output-dir", "/custom/output",
+                "--data-dir",
+                "/custom/data",
+                "--output-dir",
+                "/custom/output",
             ],
         )
         assert result.exit_code == 0
@@ -179,10 +182,14 @@ class TestRunCommand:
             app,
             [
                 "run",
-                "--github-repo", "owner/repo",
-                "--model-innovator", "llama3.2:latest",
-                "--model-critic", "llama3.2:latest",
-                "--output-dir", "/custom/output",
+                "--github-repo",
+                "owner/repo",
+                "--model-innovator",
+                "llama3.2:latest",
+                "--model-critic",
+                "llama3.2:latest",
+                "--output-dir",
+                "/custom/output",
             ],
         )
         assert result.exit_code == 0

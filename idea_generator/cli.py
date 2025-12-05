@@ -15,10 +15,9 @@ limitations under the License.
 """
 
 from pathlib import Path
-from typing import Optional
+from typing import Annotated
 
 import typer
-from typing_extensions import Annotated
 
 from .config import load_config
 from .setup import SetupError, run_setup
@@ -32,11 +31,11 @@ app = typer.Typer(
 
 # Common CLI options
 GithubRepoOption = Annotated[
-    Optional[str],
+    str | None,
     typer.Option("--github-repo", "-r", help="GitHub repository in format 'owner/repo'"),
 ]
 GithubTokenOption = Annotated[
-    Optional[str],
+    str | None,
     typer.Option(
         "--github-token",
         "-t",
@@ -45,31 +44,33 @@ GithubTokenOption = Annotated[
     ),
 ]
 OllamaHostOption = Annotated[
-    Optional[str],
+    str | None,
     typer.Option("--ollama-host", help="Ollama server host (default: http://localhost)"),
 ]
 OllamaPortOption = Annotated[
-    Optional[int],
+    int | None,
     typer.Option("--ollama-port", help="Ollama server port (default: 11434)"),
 ]
 ModelInnovatorOption = Annotated[
-    Optional[str],
-    typer.Option("--model-innovator", help="Model for innovator persona (default: llama3.2:latest)"),
+    str | None,
+    typer.Option(
+        "--model-innovator", help="Model for innovator persona (default: llama3.2:latest)"
+    ),
 ]
 ModelCriticOption = Annotated[
-    Optional[str],
+    str | None,
     typer.Option("--model-critic", help="Model for critic persona (default: llama3.2:latest)"),
 ]
 OutputDirOption = Annotated[
-    Optional[Path],
+    Path | None,
     typer.Option("--output-dir", "-o", help="Output directory (default: ./output)"),
 ]
 DataDirOption = Annotated[
-    Optional[Path],
+    Path | None,
     typer.Option("--data-dir", "-d", help="Data directory (default: ./data)"),
 ]
 PersonaDirOption = Annotated[
-    Optional[Path],
+    Path | None,
     typer.Option("--persona-dir", "-p", help="Persona directory (default: ./personas)"),
 ]
 
@@ -87,7 +88,9 @@ def setup(
     persona_dir: PersonaDirOption = None,
     skip_pull: Annotated[
         bool,
-        typer.Option("--skip-pull", help="Skip pulling models (for testing or when already installed)"),
+        typer.Option(
+            "--skip-pull", help="Skip pulling models (for testing or when already installed)"
+        ),
     ] = False,
     offline: Annotated[
         bool,
@@ -96,7 +99,7 @@ def setup(
 ) -> None:
     """
     Set up the idea-generator environment.
-    
+
     This command:
     - Validates Ollama installation and server connection
     - Pulls required Ollama models (innovator and critic personas)
@@ -118,10 +121,10 @@ def setup(
         run_setup(config, skip_pull=skip_pull, offline=offline)
     except SetupError as e:
         typer.echo(f"Setup failed: {e}", err=True)
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from e
     except Exception as e:
         typer.echo(f"Unexpected error during setup: {e}", err=True)
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from e
 
 
 @app.command()
@@ -132,7 +135,7 @@ def ingest(
 ) -> None:
     """
     Ingest data from a GitHub repository.
-    
+
     This command will be implemented in a future iteration to:
     - Clone or fetch the specified GitHub repository
     - Extract relevant information (issues, PRs, code structure)
@@ -157,7 +160,7 @@ def summarize(
 ) -> None:
     """
     Summarize ingested repository data.
-    
+
     This command will be implemented in a future iteration to:
     - Process ingested repository data
     - Generate summaries and insights
@@ -188,7 +191,7 @@ def run(
 ) -> None:
     """
     Run the complete idea generation pipeline.
-    
+
     This command will be implemented in a future iteration to:
     - Execute the innovator persona to generate ideas
     - Execute the critic persona to evaluate ideas
@@ -218,7 +221,7 @@ def run(
 def main() -> None:
     """
     idea-generator: Generate ideas from GitHub repositories using Ollama LLM personas.
-    
+
     This tool uses two LLM personas (innovator and critic) to analyze GitHub repositories
     and generate creative, well-evaluated ideas for improvements and new features.
     """
