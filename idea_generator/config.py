@@ -151,6 +151,20 @@ class Config(BaseSettings):
         le=10_000_000,
     )
 
+    # Grouping configuration
+    grouping_max_batch_size: int = Field(
+        default=20,
+        description="Maximum number of summaries to process in a single grouping batch",
+        ge=5,
+        le=100,
+    )
+    grouping_max_batch_chars: int = Field(
+        default=50000,
+        description="Maximum character count for a single grouping batch",
+        ge=10000,
+        le=200000,
+    )
+
     # Directory configuration
     output_dir: Path = Field(
         default=Path("output"),

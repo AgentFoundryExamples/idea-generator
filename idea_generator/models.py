@@ -141,3 +141,61 @@ class SummarizedIssue(BaseModel):
         if not v or not v.strip():
             raise ValueError("Summary cannot be empty")
         return v
+
+
+class IdeaCluster(BaseModel):
+    """
+    Clustered representation of grouped GitHub issues.
+
+    This model captures the output of the second Ollama persona (grouper),
+    which analyzes summarized issues to merge duplicates, split multi-topic
+    issues, and produce actionable idea clusters with aggregated metrics.
+    """
+
+    cluster_id: str = Field(description="Unique identifier for this cluster")
+    representative_title: str = Field(
+        description="Title representing the cluster (max 100 chars)", max_length=100
+    )
+    summary: str = Field(description="Condensed summary of the clustered issues")
+    topic_area: str = Field(
+        description="Primary topic area for the cluster (e.g., performance, security, UI/UX)"
+    )
+    member_issue_ids: list[int] = Field(
+        description="List of issue IDs belonging to this cluster", min_length=1
+    )
+    novelty: float = Field(
+        description="Aggregated novelty metric (0.0-1.0)",
+        ge=0.0,
+        le=1.0,
+    )
+    feasibility: float = Field(
+        description="Aggregated feasibility metric (0.0-1.0)",
+        ge=0.0,
+        le=1.0,
+    )
+    desirability: float = Field(
+        description="Aggregated desirability metric (0.0-1.0)",
+        ge=0.0,
+        le=1.0,
+    )
+    attention: float = Field(
+        description="Aggregated attention metric (0.0-1.0)",
+        ge=0.0,
+        le=1.0,
+    )
+
+    @field_validator("member_issue_ids")
+    @classmethod
+    def validate_unique_issue_ids(cls, v: list[int]) -> list[int]:
+        """Ensure all issue IDs are unique within the cluster."""
+        if len(v) != len(set(v)):
+            raise ValueError("Duplicate issue IDs found in cluster")
+        return v
+
+    @field_validator("cluster_id")
+    @classmethod
+    def validate_cluster_id_format(cls, v: str) -> str:
+        """Ensure cluster_id is not empty."""
+        if not v or not v.strip():
+            raise ValueError("cluster_id cannot be empty")
+        return v
