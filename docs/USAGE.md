@@ -142,48 +142,54 @@ nano .env  # or vim, code, etc.
 
 #### Environment Variable Reference
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
+| Variable | Required | Default | Description | Storage |
+|----------|----------|---------|-------------|---------|
 | **GitHub Configuration** |
-| `IDEA_GEN_GITHUB_REPO` | No* | None | Repository to analyze (format: `owner/repo`) |
-| `IDEA_GEN_GITHUB_TOKEN` | No† | None | GitHub Personal Access Token |
+| `IDEA_GEN_GITHUB_REPO` | No* | None | Repository to analyze (format: `owner/repo`) | `.env` or CLI |
+| `IDEA_GEN_GITHUB_TOKEN` | No† | None | GitHub Personal Access Token | `.env` recommended‡ |
 | **Ollama Configuration** |
-| `IDEA_GEN_OLLAMA_HOST` | No | `http://localhost` | Ollama server host URL |
-| `IDEA_GEN_OLLAMA_PORT` | No | `11434` | Ollama server port |
+| `IDEA_GEN_OLLAMA_HOST` | No | `http://localhost` | Ollama server host URL | `.env` or CLI |
+| `IDEA_GEN_OLLAMA_PORT` | No | `11434` | Ollama server port | `.env` or CLI |
 | **Model Selection** |
-| `IDEA_GEN_MODEL_INNOVATOR` | No | `llama3.2:latest` | Model for innovator persona (summarization & grouping) |
-| `IDEA_GEN_MODEL_CRITIC` | No | `llama3.2:latest` | Model for critic persona (currently unused) |
+| `IDEA_GEN_MODEL_INNOVATOR` | No | `llama3.2:latest` | Model for innovator persona (summarization & grouping) | `.env` or CLI |
+| `IDEA_GEN_MODEL_CRITIC` | No | `llama3.2:latest` | Model for critic persona (currently unused) | `.env` or CLI |
 | **Directory Configuration** |
-| `IDEA_GEN_OUTPUT_DIR` | No | `output` | Directory for generated output files |
-| `IDEA_GEN_DATA_DIR` | No | `data` | Directory for ingested data |
-| `IDEA_GEN_PERSONA_DIR` | No | `personas` | Directory for persona metadata |
+| `IDEA_GEN_OUTPUT_DIR` | No | `output` | Directory for generated output files | `.env` or CLI |
+| `IDEA_GEN_DATA_DIR` | No | `data` | Directory for ingested data | `.env` or CLI |
+| `IDEA_GEN_PERSONA_DIR` | No | `personas` | Directory for persona metadata | `.env` or CLI |
 | **Processing Configuration** |
-| `IDEA_GEN_BATCH_SIZE` | No | `10` | Items to process in a batch (legacy, not actively used) |
-| `IDEA_GEN_MAX_WORKERS` | No | `4` | Maximum concurrent workers (legacy, not actively used) |
+| `IDEA_GEN_BATCH_SIZE` | No | `10` | Items to process in a batch (legacy, not actively used) | `.env` |
+| `IDEA_GEN_MAX_WORKERS` | No | `4` | Maximum concurrent workers (legacy, not actively used) | `.env` |
 | **GitHub API Configuration** |
-| `IDEA_GEN_GITHUB_PER_PAGE` | No | `100` | Items per page for GitHub API requests (max: 100) |
-| `IDEA_GEN_GITHUB_MAX_RETRIES` | No | `3` | Maximum retry attempts for failed API requests |
+| `IDEA_GEN_GITHUB_PER_PAGE` | No | `100` | Items per page for GitHub API requests (max: 100) | `.env` |
+| `IDEA_GEN_GITHUB_MAX_RETRIES` | No | `3` | Maximum retry attempts for failed API requests | `.env` |
 | **Text Processing** |
-| `IDEA_GEN_MAX_TEXT_LENGTH` | No | `8000` | Maximum combined length of issue body + comments (chars) |
-| `IDEA_GEN_NOISE_FILTER_ENABLED` | No | `true` | Enable automatic noise/spam detection |
+| `IDEA_GEN_MAX_TEXT_LENGTH` | No | `8000` | Maximum combined length of issue body + comments (chars) | `.env` |
+| `IDEA_GEN_NOISE_FILTER_ENABLED` | No | `true` | Enable automatic noise/spam detection | `.env` |
 | **LLM Configuration** |
-| `IDEA_GEN_LLM_TIMEOUT` | No | `120.0` | LLM request timeout in seconds |
-| `IDEA_GEN_LLM_MAX_RETRIES` | No | `3` | Maximum retry attempts for failed LLM requests |
-| `IDEA_GEN_SUMMARIZATION_MAX_TOKENS` | No | `4000` | Maximum tokens per issue for summarization |
-| `IDEA_GEN_CACHE_MAX_FILE_SIZE` | No | `1000000` | Maximum cache file size in bytes (1MB) |
+| `IDEA_GEN_LLM_TIMEOUT` | No | `120.0` | LLM request timeout in seconds | `.env` |
+| `IDEA_GEN_LLM_MAX_RETRIES` | No | `3` | Maximum retry attempts for failed LLM requests | `.env` |
+| `IDEA_GEN_SUMMARIZATION_MAX_TOKENS` | No | `4000` | Maximum tokens per issue for summarization | `.env` |
+| `IDEA_GEN_CACHE_MAX_FILE_SIZE` | No | `1000000` | Maximum cache file size in bytes (1MB) | `.env` |
 | **Grouping Configuration** |
-| `IDEA_GEN_GROUPING_MAX_BATCH_SIZE` | No | `20` | Maximum summaries per grouping batch |
-| `IDEA_GEN_GROUPING_MAX_BATCH_CHARS` | No | `50000` | Maximum characters per grouping batch |
+| `IDEA_GEN_GROUPING_MAX_BATCH_SIZE` | No | `20` | Maximum summaries per grouping batch | `.env` |
+| `IDEA_GEN_GROUPING_MAX_BATCH_CHARS` | No | `50000` | Maximum characters per grouping batch | `.env` |
 | **Ranking Configuration** |
-| `IDEA_GEN_RANKING_WEIGHT_NOVELTY` | No | `0.25` | Weight for novelty metric (how innovative) |
-| `IDEA_GEN_RANKING_WEIGHT_FEASIBILITY` | No | `0.25` | Weight for feasibility metric (how practical) |
-| `IDEA_GEN_RANKING_WEIGHT_DESIRABILITY` | No | `0.30` | Weight for desirability metric (how valuable) |
-| `IDEA_GEN_RANKING_WEIGHT_ATTENTION` | No | `0.20` | Weight for attention metric (community engagement) |
-| `IDEA_GEN_TOP_IDEAS_COUNT` | No | `10` | Number of top ideas in Markdown report |
+| `IDEA_GEN_RANKING_WEIGHT_NOVELTY` | No | `0.25` | Weight for novelty metric (how innovative) | `.env` |
+| `IDEA_GEN_RANKING_WEIGHT_FEASIBILITY` | No | `0.25` | Weight for feasibility metric (how practical) | `.env` |
+| `IDEA_GEN_RANKING_WEIGHT_DESIRABILITY` | No | `0.30` | Weight for desirability metric (how valuable) | `.env` |
+| `IDEA_GEN_RANKING_WEIGHT_ATTENTION` | No | `0.20` | Weight for attention metric (community engagement) | `.env` |
+| `IDEA_GEN_TOP_IDEAS_COUNT` | No | `10` | Number of top ideas in Markdown report | `.env` |
 
 **Notes:**
 - \* Required when using commands that need a repository (ingest, summarize, group, run)
 - † Required for private repositories or to avoid rate limits on public repositories
+- ‡ **Security**: Store tokens in `.env` file (never committed to git) rather than shell exports or CLI arguments to avoid exposure in logs and command history
+
+**Storage Guidelines:**
+- **`.env` file**: Recommended for all configuration, especially sensitive data like tokens. Never commit to version control.
+- **CLI arguments**: Temporary overrides for testing. Avoid using for tokens as they appear in shell history and process listings.
+- **Shell exports**: Can be used but tokens may persist in shell history. Clear history after use if storing tokens this way.
 
 **Important:** Ranking weights must sum to 1.0 (within ±0.01 tolerance). The pipeline validates this at runtime.
 
@@ -212,17 +218,17 @@ nano .env  # or vim, code, etc.
 
 **Option 1: In .env file (recommended)**
 ```bash
-IDEA_GEN_GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+IDEA_GEN_GITHUB_TOKEN=<your_token_here>
 ```
 
 **Option 2: Environment variable**
 ```bash
-export IDEA_GEN_GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+export IDEA_GEN_GITHUB_TOKEN=<your_token_here>
 ```
 
-**Option 3: Command-line argument**
+**Option 3: Command-line argument (not recommended for security)**
 ```bash
-idea-generator ingest --github-repo owner/repo --github-token ghp_xxx...
+idea-generator ingest --github-repo owner/repo --github-token <your_token_here>
 ```
 
 ⚠️ **Security Best Practices:**
@@ -231,6 +237,8 @@ idea-generator ingest --github-repo owner/repo --github-token ghp_xxx...
 - Set expiration dates on tokens
 - Rotate tokens regularly
 - Consider using environment-specific tokens (dev vs production)
+- **Avoid passing tokens via CLI arguments** - they appear in shell history and process listings
+- Store tokens in `.env` file or use secure secret management tools
 
 ### Ollama Model Configuration
 
@@ -393,10 +401,9 @@ idea-generator ingest --github-repo owner/repo
 # Basic usage with repository
 idea-generator ingest --github-repo facebook/react
 
-# With authentication token
+# With authentication token (stored in .env recommended)
 idea-generator ingest \
-  --github-repo myorg/private-repo \
-  --github-token ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  --github-repo myorg/private-repo
 
 # Custom data directory
 idea-generator ingest \
@@ -706,10 +713,9 @@ idea-generator run \
   --github-repo owner/repo \
   --skip-markdown
 
-# With authentication
+# With authentication (token in .env recommended)
 idea-generator run \
-  --github-repo myorg/private-repo \
-  --github-token ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  --github-repo myorg/private-repo
 ```
 
 **Output files:**
@@ -774,6 +780,8 @@ Pipeline complete!
 ```
 
 ## Command Reference
+
+**Note on CLI Help:** Due to a known issue with Typer 0.15.1, the `--help` flag may not render correctly on some terminals. This is a cosmetic display issue that does not affect command functionality. All commands work correctly regardless of help rendering. The command reference below provides complete documentation as an alternative.
 
 ### Global Options
 
@@ -847,10 +855,9 @@ idea-generator ingest --github-repo OWNER/REPO [OPTIONS]
 # Ingest from public repository
 idea-generator ingest --github-repo facebook/react
 
-# Ingest from private repository
+# Ingest from private repository (token in .env recommended)
 idea-generator ingest \
-  --github-repo myorg/private-repo \
-  --github-token ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  --github-repo myorg/private-repo
 
 # Custom data directory
 idea-generator ingest \
@@ -988,10 +995,9 @@ idea-generator run --github-repo owner/repo --skip-markdown
 # Custom top N ideas
 idea-generator run --github-repo owner/repo --top-ideas 20
 
-# With authentication for private repo
+# With authentication for private repo (token in .env recommended)
 idea-generator run \
-  --github-repo myorg/private-repo \
-  --github-token ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  --github-repo myorg/private-repo
 ```
 
 ## Troubleshooting
@@ -1135,11 +1141,11 @@ Reset at: 2025-12-05 15:30:00 UTC
 1. Create a GitHub Personal Access Token (see [Configuration](#github-personal-access-token-setup))
 2. Add to `.env`:
    ```bash
-   IDEA_GEN_GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+   IDEA_GEN_GITHUB_TOKEN=<your_token_here>
    ```
 3. Verify increased limit:
    ```bash
-   curl -H "Authorization: token ghp_xxx..." \
+   curl -H "Authorization: token <your_token_here>" \
      https://api.github.com/rate_limit
    ```
 
@@ -1442,7 +1448,8 @@ If running Ollama on a different machine:
 **1. Start Ollama with network binding:**
 ```bash
 # On server machine
-OLLAMA_HOST=0.0.0.0:11434 ollama serve
+export OLLAMA_HOST="0.0.0.0:11434"
+ollama serve
 ```
 
 **2. Configure firewall:**
@@ -1521,7 +1528,9 @@ REPORT_DIR="reports/$DATE"
 
 # Setup environment
 source .venv/bin/activate
-export IDEA_GEN_GITHUB_TOKEN="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# Note: Token should be in .env file, not exported in scripts
+# IDEA_GEN_GITHUB_TOKEN is read from .env automatically
 
 # Run pipeline
 idea-generator run \
@@ -1541,8 +1550,8 @@ echo "Report generated: $REPORT_DIR/reports/top-ideas.md"
 # Edit crontab
 crontab -e
 
-# Add daily run at 2 AM
-0 2 * * * /path/to/daily-report.sh >> /var/log/idea-generator.log 2>&1
+# Add daily run at 2 AM (ensure script runs in correct directory)
+0 2 * * * cd /path/to/idea-generator && /path/to/idea-generator/daily-report.sh >> /var/log/idea-generator.log 2>&1
 ```
 
 ### CI/CD Integration

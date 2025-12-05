@@ -258,7 +258,7 @@ IDEA_GEN_GITHUB_REPO=owner/repo
 **With authentication (private repo or higher rate limits):**
 ```bash
 IDEA_GEN_GITHUB_REPO=owner/repo
-IDEA_GEN_GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+IDEA_GEN_GITHUB_TOKEN=<your_token_here>
 ```
 
 **Custom model:**
@@ -268,32 +268,34 @@ IDEA_GEN_MODEL_INNOVATOR=llama3.2:3b  # Faster, lighter
 
 ### Environment Variable Reference
 
-| Category | Variable | Default | Description | Required |
-|----------|----------|---------|-------------|----------|
-| **GitHub** | `IDEA_GEN_GITHUB_REPO` | None | Repository to analyze (`owner/repo`) | For ingest/run |
-| | `IDEA_GEN_GITHUB_TOKEN` | None | Personal Access Token (PAT) | For private repos |
-| **Ollama** | `IDEA_GEN_OLLAMA_HOST` | `http://localhost` | Ollama server URL | No |
-| | `IDEA_GEN_OLLAMA_PORT` | `11434` | Ollama server port | No |
-| **Models** | `IDEA_GEN_MODEL_INNOVATOR` | `llama3.2:latest` | Model for summarization/grouping | No |
-| | `IDEA_GEN_MODEL_CRITIC` | `llama3.2:latest` | Model for critic persona (unused) | No |
-| **Directories** | `IDEA_GEN_OUTPUT_DIR` | `output` | Output directory for results | No |
-| | `IDEA_GEN_DATA_DIR` | `data` | Data directory for ingested issues | No |
-| | `IDEA_GEN_PERSONA_DIR` | `personas` | Persona metadata directory | No |
-| **Processing** | `IDEA_GEN_MAX_TEXT_LENGTH` | `8000` | Max chars for issue body + comments | No |
-| | `IDEA_GEN_SUMMARIZATION_MAX_TOKENS` | `4000` | Max tokens per issue for summarization | No |
-| | `IDEA_GEN_GROUPING_MAX_BATCH_SIZE` | `20` | Max summaries per grouping batch | No |
-| | `IDEA_GEN_GROUPING_MAX_BATCH_CHARS` | `50000` | Max chars per grouping batch | No |
-| **API** | `IDEA_GEN_GITHUB_PER_PAGE` | `100` | Items per GitHub API page (max: 100) | No |
-| | `IDEA_GEN_GITHUB_MAX_RETRIES` | `3` | Max retry attempts for GitHub API | No |
-| | `IDEA_GEN_LLM_TIMEOUT` | `120.0` | LLM request timeout (seconds) | No |
-| | `IDEA_GEN_LLM_MAX_RETRIES` | `3` | Max retry attempts for LLM requests | No |
-| **Ranking** | `IDEA_GEN_RANKING_WEIGHT_NOVELTY` | `0.25` | Weight for novelty metric | No |
-| | `IDEA_GEN_RANKING_WEIGHT_FEASIBILITY` | `0.25` | Weight for feasibility metric | No |
-| | `IDEA_GEN_RANKING_WEIGHT_DESIRABILITY` | `0.30` | Weight for desirability metric | No |
-| | `IDEA_GEN_RANKING_WEIGHT_ATTENTION` | `0.20` | Weight for attention metric | No |
-| | `IDEA_GEN_TOP_IDEAS_COUNT` | `10` | Number of ideas in Markdown report | No |
-| **Other** | `IDEA_GEN_NOISE_FILTER_ENABLED` | `true` | Enable noise/spam detection | No |
-| | `IDEA_GEN_CACHE_MAX_FILE_SIZE` | `1000000` | Max cache file size (bytes) | No |
+| Category | Variable | Default | Description | Required | Storage |
+|----------|----------|---------|-------------|----------|---------|
+| **GitHub** | `IDEA_GEN_GITHUB_REPO` | None | Repository to analyze (`owner/repo`) | For ingest/run | `.env` or CLI |
+| | `IDEA_GEN_GITHUB_TOKEN` | None | Personal Access Token (PAT) | For private repos | `.env` only* |
+| **Ollama** | `IDEA_GEN_OLLAMA_HOST` | `http://localhost` | Ollama server URL | No | `.env` or CLI |
+| | `IDEA_GEN_OLLAMA_PORT` | `11434` | Ollama server port | No | `.env` or CLI |
+| **Models** | `IDEA_GEN_MODEL_INNOVATOR` | `llama3.2:latest` | Model for summarization/grouping | No | `.env` or CLI |
+| | `IDEA_GEN_MODEL_CRITIC` | `llama3.2:latest` | Model for critic persona (unused) | No | `.env` or CLI |
+| **Directories** | `IDEA_GEN_OUTPUT_DIR` | `output` | Output directory for results | No | `.env` or CLI |
+| | `IDEA_GEN_DATA_DIR` | `data` | Data directory for ingested issues | No | `.env` or CLI |
+| | `IDEA_GEN_PERSONA_DIR` | `personas` | Persona metadata directory | No | `.env` or CLI |
+| **Processing** | `IDEA_GEN_MAX_TEXT_LENGTH` | `8000` | Max chars for issue body + comments | No | `.env` |
+| | `IDEA_GEN_SUMMARIZATION_MAX_TOKENS` | `4000` | Max tokens per issue for summarization | No | `.env` |
+| | `IDEA_GEN_GROUPING_MAX_BATCH_SIZE` | `20` | Max summaries per grouping batch | No | `.env` |
+| | `IDEA_GEN_GROUPING_MAX_BATCH_CHARS` | `50000` | Max chars per grouping batch | No | `.env` |
+| **API** | `IDEA_GEN_GITHUB_PER_PAGE` | `100` | Items per GitHub API page (max: 100) | No | `.env` |
+| | `IDEA_GEN_GITHUB_MAX_RETRIES` | `3` | Max retry attempts for GitHub API | No | `.env` |
+| | `IDEA_GEN_LLM_TIMEOUT` | `120.0` | LLM request timeout (seconds) | No | `.env` |
+| | `IDEA_GEN_LLM_MAX_RETRIES` | `3` | Max retry attempts for LLM requests | No | `.env` |
+| **Ranking** | `IDEA_GEN_RANKING_WEIGHT_NOVELTY` | `0.25` | Weight for novelty metric | No | `.env` |
+| | `IDEA_GEN_RANKING_WEIGHT_FEASIBILITY` | `0.25` | Weight for feasibility metric | No | `.env` |
+| | `IDEA_GEN_RANKING_WEIGHT_DESIRABILITY` | `0.30` | Weight for desirability metric | No | `.env` |
+| | `IDEA_GEN_RANKING_WEIGHT_ATTENTION` | `0.20` | Weight for attention metric | No | `.env` |
+| | `IDEA_GEN_TOP_IDEAS_COUNT` | `10` | Number of ideas in Markdown report | No | `.env` |
+| **Other** | `IDEA_GEN_NOISE_FILTER_ENABLED` | `true` | Enable noise/spam detection | No | `.env` |
+| | `IDEA_GEN_CACHE_MAX_FILE_SIZE` | `1000000` | Max cache file size (bytes) | No | `.env` |
+
+\* **Security Note**: Store tokens in `.env` file only (never commit to git). Avoid CLI arguments or shell exports as they may be exposed in logs and command history.
 
 📚 **See [docs/USAGE.md](docs/USAGE.md)** for detailed descriptions of each variable and configuration examples.
 
@@ -313,6 +315,8 @@ For private repositories or to avoid rate limits:
 **Token Scopes:**
 - `public_repo`: Read-only access to public repositories, higher rate limits (5000/hour vs 60/hour)
 - `repo`: Full access to public and private repositories (includes all repo permissions)
+
+**Security**: Store tokens only in `.env` file. Avoid CLI arguments or shell exports as they appear in command history and process listings.
 
 ## Usage
 
