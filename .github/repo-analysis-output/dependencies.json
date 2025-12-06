@@ -357,8 +357,8 @@
       "type": "file",
       "external_dependencies": {
         "stdlib": [
+          "datetime.UTC",
           "datetime.datetime",
-          "datetime.timezone",
           "json",
           "pathlib.Path",
           "tempfile.TemporaryDirectory",
@@ -376,8 +376,8 @@
       "type": "file",
       "external_dependencies": {
         "stdlib": [
+          "datetime.UTC",
           "datetime.datetime",
-          "datetime.timezone",
           "json",
           "pathlib.Path",
           "tempfile.TemporaryDirectory"
@@ -531,7 +531,6 @@
     "stdlib": [
       "datetime.UTC",
       "datetime.datetime",
-      "datetime.timezone",
       "importlib.resources.files",
       "json",
       "logging",
@@ -563,7 +562,7 @@
       "typer",
       "typer.testing.CliRunner"
     ],
-    "stdlib_count": 20,
+    "stdlib_count": 19,
     "third-party_count": 11
   }
 }

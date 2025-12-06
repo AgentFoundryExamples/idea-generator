@@ -29,8 +29,8 @@ Total files: 29
 **Role:** cli  
 **Role Justification:** CLI-related name 'cli'  
 **Summary:** Python command-line interface (role: cli)  
-**Size:** 33.61 KB  
-**LOC:** 745  
+**Size:** 34.25 KB  
+**LOC:** 763  
 **TODOs/FIXMEs:** 0  
 
 ## idea_generator/config.py
@@ -38,8 +38,8 @@ Total files: 29
 **Role:** configuration  
 **Role Justification:** configuration file name 'config'  
 **Summary:** Python configuration file (role: configuration)  
-**Size:** 10.28 KB  
-**LOC:** 273  
+**Size:** 10.59 KB  
+**LOC:** 281  
 **TODOs/FIXMEs:** 0  
 
 ## idea_generator/filters.py
@@ -56,8 +56,8 @@ Total files: 29
 **Role:** implementation  
 **Role Justification:** general implementation file (default classification)  
 **Summary:** Python module for github client  
-**Size:** 9.94 KB  
-**LOC:** 219  
+**Size:** 11.25 KB  
+**LOC:** 237  
 **TODOs/FIXMEs:** 0  
 
 ## idea_generator/llm/__init__.py
@@ -74,7 +74,7 @@ Total files: 29
 **Role:** implementation  
 **Role Justification:** general implementation file (default classification)  
 **Summary:** Python module for client  
-**Size:** 10.58 KB  
+**Size:** 10.56 KB  
 **LOC:** 227  
 **TODOs/FIXMEs:** 0  
 
@@ -119,7 +119,7 @@ Total files: 29
 **Role:** implementation  
 **Role Justification:** general implementation file (default classification)  
 **Summary:** Python module for orchestrator  
-**Size:** 16.98 KB  
+**Size:** 17.03 KB  
 **LOC:** 346  
 **TODOs/FIXMEs:** 0  
 
@@ -164,8 +164,8 @@ Total files: 29
 **Role:** test  
 **Role Justification:** filename starts with 'test_'  
 **Summary:** Python test file (role: test)  
-**Size:** 8.53 KB  
-**LOC:** 171  
+**Size:** 9.57 KB  
+**LOC:** 189  
 **TODOs/FIXMEs:** 0  
 
 ## tests/test_config.py
@@ -173,8 +173,8 @@ Total files: 29
 **Role:** test  
 **Role Justification:** filename starts with 'test_'  
 **Summary:** Python test file (role: test)  
-**Size:** 7.50 KB  
-**LOC:** 147  
+**Size:** 8.98 KB  
+**LOC:** 174  
 **TODOs/FIXMEs:** 0  
 
 ## tests/test_filters.py
@@ -182,8 +182,8 @@ Total files: 29
 **Role:** test  
 **Role Justification:** filename starts with 'test_'  
 **Summary:** Python test file (role: test)  
-**Size:** 10.34 KB  
-**LOC:** 229  
+**Size:** 10.31 KB  
+**LOC:** 227  
 **TODOs/FIXMEs:** 0  
 
 ## tests/test_github_client.py
@@ -191,8 +191,8 @@ Total files: 29
 **Role:** test  
 **Role Justification:** filename starts with 'test_'  
 **Summary:** Python test file (role: test)  
-**Size:** 12.04 KB  
-**LOC:** 253  
+**Size:** 18.31 KB  
+**LOC:** 367  
 **TODOs/FIXMEs:** 0  
 
 ## tests/test_grouping_pipeline.py
@@ -200,8 +200,8 @@ Total files: 29
 **Role:** test  
 **Role Justification:** filename starts with 'test_'  
 **Summary:** Python test file (role: test)  
-**Size:** 30.60 KB  
-**LOC:** 761  
+**Size:** 30.66 KB  
+**LOC:** 767  
 **TODOs/FIXMEs:** 0  
 
 ## tests/test_integration.py
@@ -236,8 +236,8 @@ Total files: 29
 **Role:** test  
 **Role Justification:** filename starts with 'test_'  
 **Summary:** Python test file (role: test)  
-**Size:** 14.75 KB  
-**LOC:** 325  
+**Size:** 14.66 KB  
+**LOC:** 321  
 **TODOs/FIXMEs:** 0  
 
 ## tests/test_output.py
@@ -245,8 +245,8 @@ Total files: 29
 **Role:** test  
 **Role Justification:** filename starts with 'test_'  
 **Summary:** Python test file (role: test)  
-**Size:** 16.14 KB  
-**LOC:** 396  
+**Size:** 16.01 KB  
+**LOC:** 392  
 **TODOs/FIXMEs:** 0  
 
 ## tests/test_setup.py
@@ -263,6 +263,6 @@ Total files: 29
 **Role:** test  
 **Role Justification:** filename starts with 'test_'  
 **Summary:** Python test file (role: test)  
-**Size:** 25.09 KB  
-**LOC:** 582  
+**Size:** 25.16 KB  
+**LOC:** 588  
 **TODOs/FIXMEs:** 0  
