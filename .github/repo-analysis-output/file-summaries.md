@@ -200,8 +200,8 @@ Total files: 29
 **Role:** test  
 **Role Justification:** filename starts with 'test_'  
 **Summary:** Python test file (role: test)  
-**Size:** 28.90 KB  
-**LOC:** 741  
+**Size:** 30.60 KB  
+**LOC:** 761  
 **TODOs/FIXMEs:** 0  
 
 ## tests/test_integration.py
@@ -263,6 +263,6 @@ Total files: 29
 **Role:** test  
 **Role Justification:** filename starts with 'test_'  
 **Summary:** Python test file (role: test)  
-**Size:** 23.57 KB  
-**LOC:** 564  
+**Size:** 25.09 KB  
+**LOC:** 582  
 **TODOs/FIXMEs:** 0  

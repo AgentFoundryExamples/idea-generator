@@ -10,18 +10,19 @@ Includes classification of external dependencies as stdlib vs third-party.
 
 - **Total files**: 29
 - **Intra-repo dependencies**: 25
-- **External stdlib dependencies**: 19
+- **External stdlib dependencies**: 20
 - **External third-party dependencies**: 11
 
 ## External Dependencies
 
 ### Standard Library / Core Modules
 
-Total: 19 unique modules
+Total: 20 unique modules
 
 - `datetime.UTC`
 - `datetime.datetime`
 - `datetime.timezone`
+- `importlib.resources.files`
 - `json`
 - `logging`
 - `os`
