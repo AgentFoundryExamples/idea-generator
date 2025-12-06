@@ -149,6 +149,27 @@ sequenceDiagram
 
 ## What's New
 
+### Version 0.2.0 (Latest)
+
+This release focuses on improving reliability, consistency, and usability for large repositories:
+
+🎯 **Enhanced Reliability**
+- **Schema-enforced prompts** with explicit JSON structure reminders reduce LLM output drift
+- **Strict Pydantic validation** catches malformed data early with clear error messages
+- **Pre-compiled regex patterns** improve filtering performance
+
+🔧 **Better Control**
+- **Ollama modelfiles** bundle system prompts with tuned parameters for deterministic behavior
+- **Issue limit flag** (`--issue-limit`) focuses analysis on most recently updated issues
+- **Configurable support filtering** reduces noise from help requests and questions
+
+📚 **Improved Documentation**
+- New "Schema Contract" section explaining data models and prompt design
+- Comprehensive modelfile guide with customization examples
+- Expanded filtering documentation with configuration guidance and caveats
+
+See [CHANGELOG.md](CHANGELOG.md#020---2025-12-06) for complete details and migration notes.
+
 ### Version 0.1.0 (Initial Release)
 
 This is the first public release of idea-generator! Key features include:
