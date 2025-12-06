@@ -72,6 +72,16 @@
     },
     {
       "type": "directory",
+      "name": "docs",
+      "children": [
+        {
+          "type": "file",
+          "name": "USAGE.md"
+        }
+      ]
+    },
+    {
+      "type": "directory",
       "name": "idea_generator",
       "children": [
         {
@@ -231,6 +241,10 @@
     {
       "type": "file",
       "name": ".gitignore"
+    },
+    {
+      "type": "file",
+      "name": "CHANGELOG.md"
     },
     {
       "type": "file",

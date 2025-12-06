@@ -15,6 +15,8 @@
     └── tree.md
   └── workflows
     └── af_maintenance.yml
+├── docs
+  └── USAGE.md
 ├── idea_generator
   ├── llm
     ├── prompts
@@ -53,6 +55,7 @@
   └── test_summarize_pipeline.py
 ├── .env.example
 ├── .gitignore
+├── CHANGELOG.md
 ├── LICENSE
 ├── pyproject.toml
 └── README.md
