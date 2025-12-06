@@ -292,6 +292,7 @@ IDEA_GEN_MODEL_INNOVATOR=llama3.2:3b  # Faster, lighter
 | | `IDEA_GEN_GROUPING_MAX_BATCH_CHARS` | `50000` | Max chars per grouping batch | No | `.env` |
 | **API** | `IDEA_GEN_GITHUB_PER_PAGE` | `100` | Items per GitHub API page (max: 100) | No | `.env` |
 | | `IDEA_GEN_GITHUB_MAX_RETRIES` | `3` | Max retry attempts for GitHub API | No | `.env` |
+| | `IDEA_GEN_GITHUB_ISSUE_LIMIT` | `None` | Max issues to ingest per repository (None for no limit) | No | `.env` or CLI |
 | | `IDEA_GEN_LLM_TIMEOUT` | `120.0` | LLM request timeout (seconds) | No | `.env` |
 | | `IDEA_GEN_LLM_MAX_RETRIES` | `3` | Max retry attempts for LLM requests | No | `.env` |
 | **Ranking** | `IDEA_GEN_RANKING_WEIGHT_NOVELTY` | `0.25` | Weight for novelty metric | No | `.env` |
@@ -387,23 +388,28 @@ idea-generator ingest --github-repo owner/repo
 ```
 
 This command will:
-- ✓ Fetch all open issues with pagination
+- ✓ Fetch open issues sorted by most recently updated
 - ✓ Retrieve comment threads for each issue
 - ✓ Normalize and clean the data (strip markdown noise, deduplicate comments)
 - ✓ Apply noise filtering to flag low-signal issues
 - ✓ Truncate combined text to fit within token limits (default: 8000 characters)
 - ✓ Save normalized JSON to the data directory
+- ✓ Optionally limit the number of issues ingested (for large repositories)
 
 **Options:**
 - `--github-repo`, `-r`: GitHub repository in format 'owner/repo' (required)
 - `--github-token`, `-t`: GitHub API token (optional, can be set via `IDEA_GEN_GITHUB_TOKEN`)
 - `--data-dir`, `-d`: Data directory (default: ./data)
+- `--issue-limit`: Maximum number of issues to ingest (default: no limit)
 
 **Examples:**
 
 ```bash
 # Ingest from a public repository
 idea-generator ingest --github-repo facebook/react
+
+# Ingest with a limit (useful for large repositories)
+idea-generator ingest --github-repo facebook/react --issue-limit 100
 
 # Ingest from a private repository (requires token)
 idea-generator ingest --github-repo myorg/private-repo --github-token ghp_xxx
@@ -412,10 +418,29 @@ idea-generator ingest --github-repo myorg/private-repo --github-token ghp_xxx
 idea-generator ingest --github-repo owner/repo --data-dir /custom/data
 ```
 
+**Issue Limiting and Recency Preference:**
+
+For large repositories with thousands of open issues, you can limit the number of issues ingested:
+- Issues are sorted by `updated_at` timestamp in descending order (most recent first)
+- When a limit is specified, only the most recently updated issues are processed
+- This ensures you get the most active and relevant issues rather than stale ones
+- For identical timestamps, issues are ordered by issue number (descending) for deterministic results
+- **Recommendation**: Start with a limit of 100-200 for repositories with >1000 open issues
+
+```bash
+# For large repositories, limit to most recent 200 issues
+idea-generator ingest --github-repo tensorflow/tensorflow --issue-limit 200
+
+# Or set via environment variable
+export IDEA_GEN_GITHUB_ISSUE_LIMIT=150
+idea-generator ingest --github-repo owner/repo
+```
+
 **Pagination and Rate Limits:**
 
 The ingestion process automatically handles:
-- **Pagination**: Fetches all issues and comments across multiple pages (100 items per page by default)
+- **Pagination**: Fetches issues across multiple pages (100 items per page by default)
+- **Early stopping**: When using `--issue-limit`, pagination stops as soon as the limit is reached
 - **Rate Limits**: Implements exponential backoff and retry logic when rate limits are hit
 - **Caching**: Raw API responses are cached to `data/cache/` for offline re-use and debugging
 
@@ -779,6 +804,7 @@ Users request dark mode and theme switching capabilities...
 - `--ollama-host`: Ollama server host (default: http://localhost)
 - `--ollama-port`: Ollama server port (default: 11434)
 - `--model-innovator`: Model for LLM operations (default: llama3.2:latest)
+- `--issue-limit`: Maximum number of issues to ingest (default: no limit)
 - `--force`: Regenerate all artifacts, skip cached data
 - `--skip-json`: Skip JSON report generation
 - `--skip-markdown`: Skip Markdown report generation
@@ -789,6 +815,9 @@ Users request dark mode and theme switching capabilities...
 ```bash
 # Full pipeline with default settings
 idea-generator run --github-repo facebook/react
+
+# For large repositories, limit to most recent 100 issues
+idea-generator run --github-repo tensorflow/tensorflow --issue-limit 100
 
 # Force regeneration (ignore cache)
 idea-generator run --github-repo owner/repo --force

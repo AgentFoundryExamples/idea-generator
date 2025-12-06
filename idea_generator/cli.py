@@ -246,10 +246,14 @@ def ingest(
                 raise typer.Exit(code=1) from e
 
             # Fetch issues
-            limit_msg = f" (limit: {config.github_issue_limit})" if config.github_issue_limit else ""
+            limit_msg = (
+                f" (limit: {config.github_issue_limit})" if config.github_issue_limit else ""
+            )
             typer.echo(f"Fetching open issues{limit_msg}...")
             try:
-                issues = client.fetch_issues(owner, repo, state="open", limit=config.github_issue_limit)
+                issues = client.fetch_issues(
+                    owner, repo, state="open", limit=config.github_issue_limit
+                )
                 typer.echo(f"✓ Found {len(issues)} open issues\n")
             except GitHubAPIError as e:
                 typer.echo(f"Error fetching issues: {e}", err=True)
@@ -876,12 +880,12 @@ def run(
         typer.echo(f"Ollama endpoint: {config.ollama_base_url}")
         typer.echo(f"Output directory: {config.output_dir}")
         typer.echo(f"Data directory: {config.data_dir}")
-        typer.echo(f"\nOptions:")
+        typer.echo("\nOptions:")
         typer.echo(f"  - Force regeneration: {force}")
         typer.echo(f"  - Skip JSON: {skip_json}")
         typer.echo(f"  - Skip Markdown: {skip_markdown}")
         typer.echo(f"  - Top ideas count: {config.top_ideas_count}")
-        typer.echo(f"\nScoring Weights:")
+        typer.echo("\nScoring Weights:")
         typer.echo(f"  - Novelty: {config.ranking_weight_novelty:.2f}")
         typer.echo(f"  - Feasibility: {config.ranking_weight_feasibility:.2f}")
         typer.echo(f"  - Desirability: {config.ranking_weight_desirability:.2f}")

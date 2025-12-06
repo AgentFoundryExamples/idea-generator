@@ -269,7 +269,9 @@ class GitHubClient:
 
         # Apply deterministic tiebreaker for identical timestamps: sort by issue number ascending
         # This ensures consistent ordering when timestamps are the same
-        filtered_issues.sort(key=lambda x: (x.get("updated_at", ""), x.get("number", 0)), reverse=True)
+        filtered_issues.sort(
+            key=lambda x: (x.get("updated_at", ""), x.get("number", 0)), reverse=True
+        )
 
         return filtered_issues
 

@@ -158,10 +158,14 @@ class TestSummarizationPipelineInit:
             prompt_text = prompt_path.read_text()
         except (ModuleNotFoundError, FileNotFoundError):
             pytest.skip("Prompt template not found in expected location")
-        
+
         # Verify schema reminders are present
-        assert "Required JSON Schema" in prompt_text, "Prompt should contain explicit schema section"
-        assert "title" in prompt_text and "string" in prompt_text, "Prompt should specify title field type"
+        assert (
+            "Required JSON Schema" in prompt_text
+        ), "Prompt should contain explicit schema section"
+        assert (
+            "title" in prompt_text and "string" in prompt_text
+        ), "Prompt should specify title field type"
         assert "summary" in prompt_text, "Prompt should specify summary field"
         assert "novelty" in prompt_text, "Prompt should specify novelty field"
         assert "feasibility" in prompt_text, "Prompt should specify feasibility field"
@@ -170,7 +174,9 @@ class TestSummarizationPipelineInit:
         assert "noise_flag" in prompt_text, "Prompt should specify noise_flag field"
         assert "0.0" in prompt_text and "1.0" in prompt_text, "Prompt should specify metric ranges"
         # Check for warning against extra fields using flexible assertion
-        assert ("extra" in prompt_text.lower() and "field" in prompt_text.lower()), "Prompt should warn against extra fields"
+        assert (
+            "extra" in prompt_text.lower() and "field" in prompt_text.lower()
+        ), "Prompt should warn against extra fields"
 
 
 class TestTruncateText:

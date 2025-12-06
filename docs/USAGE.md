@@ -305,6 +305,7 @@ nano .env  # or vim, code, etc.
 | **GitHub API Configuration** |
 | `IDEA_GEN_GITHUB_PER_PAGE` | No | `100` | Items per page for GitHub API requests (max: 100) | `.env` |
 | `IDEA_GEN_GITHUB_MAX_RETRIES` | No | `3` | Maximum retry attempts for failed API requests | `.env` |
+| `IDEA_GEN_GITHUB_ISSUE_LIMIT` | No | `None` | Maximum number of issues to ingest per repository (None for no limit). Use for large repositories to focus on most recently updated issues. | `.env` or CLI |
 | **Text Processing** |
 | `IDEA_GEN_MAX_TEXT_LENGTH` | No | `8000` | Maximum combined length of issue body + comments (chars) | `.env` |
 | `IDEA_GEN_NOISE_FILTER_ENABLED` | No | `true` | Enable automatic noise/spam detection | `.env` |
@@ -990,12 +991,18 @@ idea-generator ingest --github-repo OWNER/REPO [OPTIONS]
 ```
 --github-token, -t TEXT       GitHub API token
 --data-dir, -d PATH           Data directory (default: ./data)
+--issue-limit INTEGER         Maximum issues to ingest (most recent first)
 ```
 
 **Examples:**
 ```bash
 # Ingest from public repository
 idea-generator ingest --github-repo facebook/react
+
+# Limit to most recent 100 issues (useful for large repos)
+idea-generator ingest \
+  --github-repo tensorflow/tensorflow \
+  --issue-limit 100
 
 # Ingest from private repository (token in .env recommended)
 idea-generator ingest \
@@ -1006,6 +1013,15 @@ idea-generator ingest \
   --github-repo owner/repo \
   --data-dir /mnt/data/github
 ```
+
+**Issue Limiting:**
+
+For large repositories with thousands of open issues:
+- Use `--issue-limit` to cap the number of issues ingested
+- Issues are sorted by `updated_at` (most recent first) before limiting
+- This focuses analysis on active issues rather than stale ones
+- Recommended limits: 100-200 for repos with >1000 open issues
+- Can also be set via `IDEA_GEN_GITHUB_ISSUE_LIMIT` environment variable
 
 ### summarize
 
@@ -1117,6 +1133,7 @@ idea-generator run --github-repo OWNER/REPO [OPTIONS]
 --ollama-host TEXT            Ollama server host (default: http://localhost)
 --ollama-port INTEGER         Ollama server port (default: 11434)
 --model-innovator TEXT        Model for LLM operations (default: llama3.2:latest)
+--issue-limit INTEGER         Maximum issues to ingest (most recent first)
 --force                       Regenerate all artifacts, skip cached data
 --skip-json                   Skip JSON report generation
 --skip-markdown               Skip Markdown report generation
@@ -1127,6 +1144,11 @@ idea-generator run --github-repo OWNER/REPO [OPTIONS]
 ```bash
 # Full pipeline with defaults
 idea-generator run --github-repo facebook/react
+
+# For large repositories, limit to most recent 100 issues
+idea-generator run \
+  --github-repo tensorflow/tensorflow \
+  --issue-limit 100
 
 # Force complete regeneration
 idea-generator run --github-repo owner/repo --force
