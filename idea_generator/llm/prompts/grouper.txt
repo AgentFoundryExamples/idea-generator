@@ -38,15 +38,17 @@ Example input:
 ```
 
 # Output Format
-Respond with ONLY valid JSON in this exact schema:
+Respond with ONLY valid JSON in this exact schema. All fields are REQUIRED.
+
+**Required JSON Schema:**
 ```json
 {
   "clusters": [
     {
-      "cluster_id": "unique-cluster-id",
-      "representative_title": "Title representing the cluster (max 100 chars)",
-      "summary": "Condensed summary of the clustered issues",
-      "topic_area": "Primary topic area",
+      "cluster_id": "string",
+      "representative_title": "string (max 100 characters)",
+      "summary": "string (no newlines)",
+      "topic_area": "string",
       "member_issue_ids": [123456, 789012],
       "novelty": 0.45,
       "feasibility": 0.75,
@@ -56,6 +58,28 @@ Respond with ONLY valid JSON in this exact schema:
   ]
 }
 ```
+
+**Top-Level Requirements:**
+- Root object MUST have exactly one field: `clusters`
+- `clusters` MUST be an array (can be empty: `[]`)
+
+**Cluster Object Requirements (all fields REQUIRED):**
+- `cluster_id` (string): Unique identifier, format: `<topic>-<number>` (e.g., "ui-ux-001")
+- `representative_title` (string): Max 100 characters, no newlines
+- `summary` (string): Condensed summary, replace newlines with spaces
+- `topic_area` (string): Primary topic matching input summaries
+- `member_issue_ids` (array of integers): At least one issue ID, no duplicates
+- `novelty` (number): Float between 0.0 and 1.0, rounded to 2 decimals
+- `feasibility` (number): Float between 0.0 and 1.0, rounded to 2 decimals
+- `desirability` (number): Float between 0.0 and 1.0, rounded to 2 decimals
+- `attention` (number): Float between 0.0 and 1.0, rounded to 2 decimals
+
+**Important:**
+- Do NOT add extra fields beyond these 9 required per cluster
+- Do NOT use null for any field
+- Replace all newlines and tabs with single spaces
+- Every input issue_id MUST appear in exactly ONE cluster
+- If uncertain, refuse to respond rather than creating invalid output
 
 # Clustering Guidelines
 
@@ -120,10 +144,18 @@ Use lowercase with hyphens, and ensure uniqueness within the output.
 
 8. **JSON Only**: Output MUST be valid JSON with no explanations, markdown formatting, or extra text.
 
+9. **No Hallucination**: Only use the 9 required fields per cluster. Never add custom fields.
+
+10. **Text Normalization**: Replace newlines, tabs, and multiple spaces with single spaces in all text fields.
+
+11. **Metric Precision**: Round all aggregated metrics to exactly 2 decimal places (e.g., 0.35, 0.75).
+
+12. **Refuse When Uncertain**: If you cannot confidently cluster or validate coverage, return {"clusters": []} and the system will retry.
+
 # Example Scenarios
 
 ## Scenario 1: Merge Duplicates
-Input:
+**Input:**
 ```json
 [
   {"issue_id": 100, "title": "Add dark mode", "topic_area": "UI/UX", "novelty": 0.3, "feasibility": 0.8, "desirability": 0.9, "attention": 0.7},
@@ -131,7 +163,7 @@ Input:
 ]
 ```
 
-Output:
+**Output:**
 ```json
 {
   "clusters": [
@@ -150,15 +182,17 @@ Output:
 }
 ```
 
+Note: All 9 fields present per cluster, no extras, metrics averaged and rounded to 2 decimals, no newlines.
+
 ## Scenario 2: Keep Singleton
-Input:
+**Input:**
 ```json
 [
   {"issue_id": 200, "title": "Fix critical security vulnerability in auth", "topic_area": "security", "novelty": 0.2, "feasibility": 0.9, "desirability": 1.0, "attention": 0.9}
 ]
 ```
 
-Output:
+**Output:**
 ```json
 {
   "clusters": [
@@ -177,14 +211,14 @@ Output:
 }
 ```
 
-## Scenario 3: Split Multi-Topic
-If input contains multi-topic issue descriptions, extract separate concerns into distinct clusters based on topic_area and summary content. However, since each input already has a single topic_area, this typically means recognizing when summaries describe multiple separable features and creating clusters accordingly.
+Note: Single-member clusters are valid and expected.
 
 # Edge Cases
 
-- **Empty batch**: Should not occur (validation error upstream), but if received, return `{"clusters": []}`
+- **Empty batch**: Return `{"clusters": []}` (no error)
 - **All noise issues**: Create singleton clusters but note this in summary
 - **Very similar metrics**: Small differences are acceptable; trust the aggregation formula
 - **Long titles**: Truncate to 100 chars while preserving meaning
+- **Special characters**: Escape quotes and backslashes in JSON strings, replace newlines/tabs with spaces
 
-Remember: Your goal is to reduce redundancy, improve actionability, and provide clear groupings for downstream decision-making.
+Remember: Your goal is to reduce redundancy, improve actionability, and provide clear groupings for downstream decision-making. Schema compliance is mandatory—validation will reject non-conforming output.

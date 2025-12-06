@@ -121,6 +121,148 @@ If you see the help output listing available commands, installation was successf
 
 ## Configuration
 
+### Schema Contract
+
+The idea-generator enforces strict schema adherence through carefully designed LLM prompts and Pydantic data models. This ensures consistent, reliable output from smaller LLMs even as context windows grow.
+
+#### Why Schema Enforcement Matters
+
+Small local LLMs (1B-8B parameters) can drift when processing large batches, producing:
+- Malformed JSON (missing commas, unclosed brackets)
+- Extra fields not in the schema
+- Missing required fields
+- Invalid metric ranges
+- Incorrect data types
+
+Our approach prevents drift through:
+1. **Explicit schema reminders** in every prompt
+2. **Minimal success examples** showing exact format
+3. **Pydantic validation** catching errors early
+4. **Refusal guidance** when LLM is uncertain
+
+#### Data Models
+
+The pipeline uses three core Pydantic models with strict validation:
+
+**1. SummarizedIssue (Summarizer Output)**
+```python
+{
+  "issue_id": int,              # GitHub issue ID
+  "source_number": int,         # Issue number in repo
+  "title": str,                 # Max 100 characters
+  "summary": str,               # 2-3 sentences, no newlines
+  "topic_area": str,            # e.g., "UI/UX", "security"
+  "novelty": float,             # 0.0-1.0, how innovative
+  "feasibility": float,         # 0.0-1.0, how practical
+  "desirability": float,        # 0.0-1.0, how valuable
+  "attention": float,           # 0.0-1.0, engagement level
+  "noise_flag": bool,           # true if spam/low-quality
+  "raw_issue_url": str          # GitHub URL
+}
+```
+
+**Validation Rules:**
+- `title`: Auto-truncated to 100 chars
+- `summary`: Cannot be empty or whitespace-only
+- Metrics: Must be floats in range [0.0, 1.0]
+- All fields required, no nulls allowed
+
+**2. IdeaCluster (Grouper Output)**
+```python
+{
+  "cluster_id": str,            # Format: "topic-001"
+  "representative_title": str,  # Max 100 chars
+  "summary": str,               # Condensed, no newlines
+  "topic_area": str,            # Primary topic
+  "member_issue_ids": [int],    # At least 1, no duplicates
+  "novelty": float,             # 0.0-1.0, averaged
+  "feasibility": float,         # 0.0-1.0, averaged
+  "desirability": float,        # 0.0-1.0, averaged
+  "attention": float            # 0.0-1.0, averaged
+}
+```
+
+**Validation Rules:**
+- `cluster_id`: Cannot be empty/whitespace
+- `representative_title`: Max 100 chars
+- `member_issue_ids`: Must have at least 1, all unique
+- Metrics: Averaged across members, rounded to 2 decimals
+
+#### Prompt Design Principles
+
+Both `summarizer.txt` and `grouper.txt` follow these design principles:
+
+1. **Explicit Schema Section**
+   - Lists all required fields with types
+   - Shows exact JSON structure
+   - Warns against extra fields
+
+2. **Minimal Success Example**
+   - Shows one perfect output
+   - Annotated with reminders
+   - Demonstrates proper formatting
+
+3. **Text Normalization Rules**
+   - Replace newlines with spaces
+   - No tabs or control characters
+   - Single spaces, no multiples
+
+4. **Refusal Guidance**
+   - "Refuse if unsure" instruction
+   - Better to fail fast than return garbage
+   - Retry logic handles transient errors
+
+5. **Concise Language**
+   - Optimized for small LLM context windows
+   - No redundant explanations
+   - Clear, imperative instructions
+
+#### Schema Evolution
+
+When modifying schemas:
+
+1. **Update Pydantic Models** (`idea_generator/models.py`)
+   - Add field with proper type hints
+   - Include Pydantic validators if needed
+   - Update docstrings
+
+2. **Update Prompt Templates** (`idea_generator/llm/prompts/*.txt`)
+   - Add field to "Required JSON Schema" section
+   - Update example output
+   - Add validation notes if complex
+
+3. **Add Regression Tests** (`tests/test_*_pipeline.py`)
+   - Verify prompt contains new field name
+   - Test Pydantic validation catches invalid values
+   - Test parsing handles new field
+
+4. **Update Documentation** (this file, README.md)
+   - Explain new field's purpose
+   - Show updated examples
+   - Note any breaking changes
+
+#### Common Pitfalls
+
+**Newline Handling**
+- Issue: LLMs may include `\n` in summaries
+- Solution: Prompts explicitly say "no newlines, replace with spaces"
+- Fallback: Pipeline can strip/replace if needed
+
+**Extra Fields**
+- Issue: LLM adds creative fields like "priority" or "tags"
+- Solution: Prompts warn "Do NOT add extra fields"
+- Fallback: Pydantic ignores unknowns with `model_validate(data, strict=False)`
+
+**Metric Ranges**
+- Issue: LLM outputs 1.2 or -0.1 for metrics
+- Solution: Prompts show "0.0-1.0" range repeatedly
+- Fallback: Pydantic validators raise errors on invalid range
+
+**Missing Fields**
+- Issue: LLM omits optional-looking fields
+- Solution: Prompts list "All fields are REQUIRED"
+- Fallback: Parser raises `SummarizationError` or `GroupingError`
+
 ### Environment Variables
 
 The idea-generator can be configured using:

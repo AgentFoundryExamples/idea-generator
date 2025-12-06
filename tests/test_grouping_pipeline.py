@@ -137,6 +137,31 @@ class TestGroupingPipelineInit:
                 prompt_template_path=Path("/nonexistent/grouper.txt"),
             )
 
+    def test_prompt_contains_schema_reminders(self, mock_llm_client: Mock) -> None:
+        """Test that prompt template contains explicit schema field requirements."""
+        from pathlib import Path
+
+        prompt_path = Path(__file__).parent.parent / "idea_generator" / "llm" / "prompts" / "grouper.txt"
+        
+        if not prompt_path.exists():
+            pytest.skip("Prompt template not found in expected location")
+        
+        prompt_text = prompt_path.read_text()
+        
+        # Verify schema reminders are present
+        assert "Required JSON Schema" in prompt_text, "Prompt should contain explicit schema section"
+        assert "clusters" in prompt_text, "Prompt should specify clusters field"
+        assert "cluster_id" in prompt_text, "Prompt should specify cluster_id field"
+        assert "representative_title" in prompt_text, "Prompt should specify representative_title field"
+        assert "member_issue_ids" in prompt_text, "Prompt should specify member_issue_ids field"
+        assert "novelty" in prompt_text, "Prompt should specify novelty field"
+        assert "feasibility" in prompt_text, "Prompt should specify feasibility field"
+        assert "desirability" in prompt_text, "Prompt should specify desirability field"
+        assert "attention" in prompt_text, "Prompt should specify attention field"
+        assert "0.0" in prompt_text and "1.0" in prompt_text, "Prompt should specify metric ranges"
+        assert "Do NOT add extra fields" in prompt_text or "no extra" in prompt_text.lower(), "Prompt should warn against extra fields"
+        assert "newline" in prompt_text.lower(), "Prompt should mention newline handling"
+
 
 class TestCreateBatches:
     """Tests for batch creation logic."""

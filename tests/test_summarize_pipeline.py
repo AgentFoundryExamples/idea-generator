@@ -150,6 +150,29 @@ class TestSummarizationPipelineInit:
 
         assert pipeline.cache_dir is None
 
+    def test_prompt_contains_schema_reminders(self, mock_llm_client: Mock) -> None:
+        """Test that prompt template contains explicit schema field requirements."""
+        from pathlib import Path
+
+        prompt_path = Path(__file__).parent.parent / "idea_generator" / "llm" / "prompts" / "summarizer.txt"
+        
+        if not prompt_path.exists():
+            pytest.skip("Prompt template not found in expected location")
+        
+        prompt_text = prompt_path.read_text()
+        
+        # Verify schema reminders are present
+        assert "Required JSON Schema" in prompt_text, "Prompt should contain explicit schema section"
+        assert "title" in prompt_text and "string" in prompt_text, "Prompt should specify title field type"
+        assert "summary" in prompt_text, "Prompt should specify summary field"
+        assert "novelty" in prompt_text, "Prompt should specify novelty field"
+        assert "feasibility" in prompt_text, "Prompt should specify feasibility field"
+        assert "desirability" in prompt_text, "Prompt should specify desirability field"
+        assert "attention" in prompt_text, "Prompt should specify attention field"
+        assert "noise_flag" in prompt_text, "Prompt should specify noise_flag field"
+        assert "0.0" in prompt_text and "1.0" in prompt_text, "Prompt should specify metric ranges"
+        assert "Do NOT add extra fields" in prompt_text or "no extra" in prompt_text.lower(), "Prompt should warn against extra fields"
+
 
 class TestTruncateText:
     """Tests for text truncation."""
