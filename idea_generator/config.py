@@ -123,6 +123,11 @@ class Config(BaseSettings):
         ge=0,
         le=10,
     )
+    github_issue_limit: int | None = Field(
+        default=None,
+        description="Maximum number of issues to ingest per repository (None for no limit)",
+        ge=1,
+    )
 
     # Text processing configuration
     max_text_length: int = Field(
@@ -276,6 +281,7 @@ def load_config(
     max_workers: int | None = None,
     github_per_page: int | None = None,
     github_max_retries: int | None = None,
+    github_issue_limit: int | None = None,
     max_text_length: int | None = None,
     noise_filter_enabled: bool | None = None,
     output_dir: Path | None = None,
@@ -313,6 +319,8 @@ def load_config(
         kwargs["github_per_page"] = github_per_page
     if github_max_retries is not None:
         kwargs["github_max_retries"] = github_max_retries
+    if github_issue_limit is not None:
+        kwargs["github_issue_limit"] = github_issue_limit
     if max_text_length is not None:
         kwargs["max_text_length"] = max_text_length
     if noise_filter_enabled is not None:

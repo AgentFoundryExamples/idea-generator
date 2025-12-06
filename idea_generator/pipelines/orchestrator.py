@@ -232,7 +232,7 @@ class Orchestrator:
                     raise OrchestratorError(f"Repository {owner}/{repo} not accessible")
 
                 # Fetch issues
-                issues_data = client.fetch_issues(owner, repo, state="open")
+                issues_data = client.fetch_issues(owner, repo, state="open", limit=self.config.github_issue_limit)
                 if not issues_data:
                     logger.warning("No open issues found")
                     return []

@@ -269,6 +269,107 @@ class TestGitHubClient:
             client.close()
 
     @patch("httpx.Client.request")
+    def test_fetch_issues_with_limit(self, mock_request: MagicMock) -> None:
+        """Test fetching issues with a limit."""
+        # Return 5 issues, but we'll limit to 3
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = [
+            {"id": i, "number": i, "title": f"Issue {i}", "updated_at": f"2025-01-0{6-i}T00:00:00Z"}
+            for i in range(1, 6)
+        ]
+        mock_request.return_value = mock_response
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            client = GitHubClient(cache_dir=Path(tmpdir))
+            issues = client.fetch_issues("owner", "repo", limit=3)
+            assert len(issues) == 3
+            client.close()
+
+    @patch("httpx.Client.request")
+    def test_fetch_issues_sorting_by_updated_at(self, mock_request: MagicMock) -> None:
+        """Test that issues are sorted by updated_at descending."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = [
+            {"id": 1, "number": 1, "updated_at": "2025-01-01T00:00:00Z"},
+            {"id": 2, "number": 2, "updated_at": "2025-01-05T00:00:00Z"},
+            {"id": 3, "number": 3, "updated_at": "2025-01-03T00:00:00Z"},
+        ]
+        mock_request.return_value = mock_response
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            client = GitHubClient(cache_dir=Path(tmpdir))
+            issues = client.fetch_issues("owner", "repo")
+            # Should be sorted by updated_at descending
+            assert issues[0]["id"] == 2  # 2025-01-05
+            assert issues[1]["id"] == 3  # 2025-01-03
+            assert issues[2]["id"] == 1  # 2025-01-01
+            client.close()
+
+    @patch("httpx.Client.request")
+    def test_fetch_issues_tiebreaker_on_same_timestamp(self, mock_request: MagicMock) -> None:
+        """Test deterministic tiebreaker when timestamps are identical."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = [
+            {"id": 3, "number": 3, "updated_at": "2025-01-01T00:00:00Z"},
+            {"id": 1, "number": 1, "updated_at": "2025-01-01T00:00:00Z"},
+            {"id": 2, "number": 2, "updated_at": "2025-01-01T00:00:00Z"},
+        ]
+        mock_request.return_value = mock_response
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            client = GitHubClient(cache_dir=Path(tmpdir))
+            issues = client.fetch_issues("owner", "repo")
+            # With same timestamp, should be sorted by issue number descending (most recent first)
+            # Since the sort is (updated_at, number) with reverse=True
+            assert issues[0]["number"] == 3
+            assert issues[1]["number"] == 2
+            assert issues[2]["number"] == 1
+            client.close()
+
+    @patch("httpx.Client.request")
+    def test_fetch_issues_fewer_than_limit(self, mock_request: MagicMock) -> None:
+        """Test fetching issues when there are fewer issues than the limit."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = [
+            {"id": 1, "number": 1, "title": "Issue 1", "updated_at": "2025-01-01T00:00:00Z"},
+            {"id": 2, "number": 2, "title": "Issue 2", "updated_at": "2025-01-02T00:00:00Z"},
+        ]
+        mock_request.return_value = mock_response
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            client = GitHubClient(cache_dir=Path(tmpdir))
+            # Request limit of 10, but only 2 issues exist
+            issues = client.fetch_issues("owner", "repo", limit=10)
+            assert len(issues) == 2
+            client.close()
+
+    @patch("httpx.Client.request")
+    def test_paginate_with_limit(self, mock_request: MagicMock) -> None:
+        """Test pagination stops early when limit is reached."""
+        # First page: 100 items
+        page1_response = MagicMock()
+        page1_response.status_code = 200
+        page1_response.json.return_value = [{"id": i} for i in range(100)]
+
+        # Second page should not be called because limit is 150
+        page2_response = MagicMock()
+        page2_response.status_code = 200
+        page2_response.json.return_value = [{"id": i} for i in range(100, 200)]
+
+        mock_request.side_effect = [page1_response, page2_response]
+
+        client = GitHubClient(per_page=100)
+        result = client._paginate("/test", limit=150)
+        # Should fetch 2 pages but only return 150 items
+        assert len(result) == 150
+        assert mock_request.call_count == 2
+        client.close()
+
+    @patch("httpx.Client.request")
     def test_fetch_issue_comments(self, mock_request: MagicMock) -> None:
         """Test fetching issue comments."""
         mock_response = MagicMock()

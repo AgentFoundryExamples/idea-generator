@@ -104,6 +104,14 @@ PersonaDirOption = Annotated[
     Path | None,
     typer.Option("--persona-dir", "-p", help="Persona directory (default: ./personas)"),
 ]
+IssueLimitOption = Annotated[
+    int | None,
+    typer.Option(
+        "--issue-limit",
+        help="Maximum number of issues to ingest (default: no limit)",
+        min=1,
+    ),
+]
 
 
 @app.command()
@@ -163,22 +171,25 @@ def ingest(
     github_repo: GithubRepoOption = None,
     github_token: GithubTokenOption = None,
     data_dir: DataDirOption = None,
+    issue_limit: IssueLimitOption = None,
 ) -> None:
     """
     Ingest open issues from a GitHub repository.
 
     This command:
-    - Fetches all open issues with pagination
+    - Fetches open issues sorted by most recently updated
     - Retrieves comment threads for each issue
     - Normalizes and cleans the data
     - Applies noise filtering
     - Saves normalized JSON to the data directory
+    - Optionally limits the number of issues ingested (--issue-limit)
     """
     try:
         config = load_config(
             github_repo=github_repo,
             github_token=github_token,
             data_dir=data_dir,
+            github_issue_limit=issue_limit,
         )
 
         # Validate required configuration
@@ -235,9 +246,10 @@ def ingest(
                 raise typer.Exit(code=1) from e
 
             # Fetch issues
-            typer.echo("Fetching open issues...")
+            limit_msg = f" (limit: {config.github_issue_limit})" if config.github_issue_limit else ""
+            typer.echo(f"Fetching open issues{limit_msg}...")
             try:
-                issues = client.fetch_issues(owner, repo, state="open")
+                issues = client.fetch_issues(owner, repo, state="open", limit=config.github_issue_limit)
                 typer.echo(f"✓ Found {len(issues)} open issues\n")
             except GitHubAPIError as e:
                 typer.echo(f"Error fetching issues: {e}", err=True)
@@ -798,6 +810,7 @@ def run(
     model_innovator: ModelInnovatorOption = None,
     output_dir: OutputDirOption = None,
     data_dir: DataDirOption = None,
+    issue_limit: IssueLimitOption = None,
     force: Annotated[
         bool,
         typer.Option("--force", help="Force regeneration of all artifacts (skip cache)"),
@@ -839,6 +852,7 @@ def run(
             model_innovator=model_innovator,
             output_dir=output_dir,
             data_dir=data_dir,
+            github_issue_limit=issue_limit,
         )
 
         # Override top_ideas if provided

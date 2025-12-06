@@ -153,6 +153,28 @@ class TestIngestCommand:
             assert "owner/repo" in result.stdout
             assert "No open issues found" in result.stdout
 
+    def test_ingest_with_issue_limit(self) -> None:
+        """Test ingest with issue limit argument."""
+        from unittest.mock import MagicMock, patch
+
+        with patch("idea_generator.cli.GitHubClient") as mock_client_class:
+            mock_client = MagicMock()
+            mock_client.__enter__ = MagicMock(return_value=mock_client)
+            mock_client.__exit__ = MagicMock(return_value=False)
+            mock_client.check_repository_access = MagicMock(return_value=True)
+            mock_client.fetch_issues = MagicMock(return_value=[])
+            mock_client_class.return_value = mock_client
+
+            result = runner.invoke(
+                app, ["ingest", "--github-repo", "owner/repo", "--issue-limit", "50"]
+            )
+            assert result.exit_code == 0
+            assert "limit: 50" in result.stdout
+            # Verify fetch_issues was called with the correct limit
+            mock_client.fetch_issues.assert_called_once()
+            call_args = mock_client.fetch_issues.call_args
+            assert call_args[1]["limit"] == 50
+
 
 class TestSummarizeCommand:
     """Test suite for summarize command."""
