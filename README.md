@@ -10,6 +10,171 @@ The idea-generator leverages large language models running locally through Ollam
 - Critically evaluate ideas through a "critic" persona
 - Produce actionable insights and recommendations
 
+## Quick Start
+
+Get started in 5 minutes:
+
+```bash
+# 1. Install Ollama
+curl -fsSL https://ollama.ai/install.sh | sh
+ollama serve  # Keep running in separate terminal
+
+# 2. Clone and install
+git clone https://github.com/AgentFoundryExamples/idea-generator.git
+cd idea-generator
+python -m venv .venv && source .venv/bin/activate
+pip install -e .
+
+# 3. Setup
+idea-generator setup
+
+# 4. Analyze a repository
+idea-generator run --github-repo facebook/react
+
+# 5. View results
+cat output/reports/top-ideas.md
+```
+
+📚 **Need more details?** See the [detailed usage guide](docs/USAGE.md) for comprehensive instructions.
+
+## Architecture
+
+The idea-generator follows a multi-stage pipeline architecture:
+
+```mermaid
+graph LR
+    A[GitHub Issues] -->|Ingest| B[Normalized Data]
+    B -->|Summarize| C[Issue Summaries]
+    C -->|Group| D[Idea Clusters]
+    D -->|Rank| E[Scored Ideas]
+    E -->|Generate| F[Reports]
+    
+    style A fill:#e1f5ff
+    style B fill:#fff4e1
+    style C fill:#ffe1f5
+    style D fill:#e1ffe1
+    style E fill:#f5e1ff
+    style F fill:#ffe1e1
+```
+
+### Pipeline Stages
+
+1. **Ingest** (`idea-generator ingest`)
+   - Fetches open issues from GitHub API
+   - Retrieves comment threads
+   - Cleans markdown and normalizes data
+   - Filters noise/spam
+   - Caches raw responses
+   - **Output**: `data/owner_repo_issues.json`
+
+2. **Summarize** (`idea-generator summarize`)
+   - Processes each issue through LLM
+   - Generates 2-3 sentence summaries
+   - Classifies topic areas
+   - Scores novelty, feasibility, desirability, attention
+   - Caches individual summaries
+   - **Output**: `output/owner_repo_summaries.json`
+
+3. **Group** (`idea-generator group`)
+   - Clusters similar issues together
+   - Merges duplicates
+   - Splits multi-topic issues
+   - Aggregates metrics
+   - Validates coverage
+   - **Output**: `output/owner_repo_clusters.json`
+
+4. **Rank** (part of `idea-generator run`)
+   - Calculates composite scores
+   - Applies weighted metrics
+   - Deterministic tie-breaking
+   - Sorts by priority
+   - **Output**: Ranked cluster list
+
+5. **Generate Reports** (part of `idea-generator run`)
+   - Creates JSON dataset
+   - Generates Markdown report
+   - Formats with visual indicators
+   - Links to source issues
+   - **Output**: `output/reports/ideas.json` and `output/reports/top-ideas.md`
+
+### Data Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant CLI
+    participant GitHub
+    participant Ollama
+    participant Cache
+    
+    User->>CLI: run --github-repo owner/repo
+    CLI->>GitHub: Fetch issues + comments
+    GitHub-->>CLI: Raw issue data
+    CLI->>Cache: Store raw responses
+    CLI->>Ollama: Summarize each issue
+    Ollama-->>CLI: Summary + metrics
+    CLI->>Cache: Store summaries
+    CLI->>Ollama: Group summaries
+    Ollama-->>CLI: Clusters
+    CLI->>CLI: Rank clusters
+    CLI->>CLI: Generate reports
+    CLI-->>User: output/reports/
+```
+
+## Key Features
+
+### 🚀 Intelligent Analysis
+- **AI-Powered Summaries**: Local LLM generates concise, structured summaries
+- **Quantitative Metrics**: Four-dimensional scoring (novelty, feasibility, desirability, attention)
+- **Smart Clustering**: Automatically groups related issues and merges duplicates
+- **Topic Classification**: Categorizes issues by domain (UI/UX, performance, security, etc.)
+
+### 🔒 Privacy-Focused
+- **100% Local**: All processing happens on your machine
+- **No External APIs**: Only GitHub for data, Ollama for AI (both configurable)
+- **Data Control**: You control where data is stored and cached
+
+### ⚡ Performance Optimized
+- **Smart Caching**: Avoids redundant API calls and LLM processing
+- **Batched Operations**: Groups multiple issues for efficient processing
+- **Resumable**: Failed runs can resume from last successful stage
+- **Configurable**: Tune batch sizes, timeouts, and model selection for your hardware
+
+### 🛠️ Developer Friendly
+- **CLI-First**: Easy to use, script, and integrate into workflows
+- **Well-Tested**: 225+ unit tests with 70%+ coverage
+- **Type-Safe**: Full type hints with MyPy validation
+- **Extensible**: Modular architecture, easy to customize personas and prompts
+
+## What's New
+
+### Version 0.1.0 (Initial Release)
+
+This is the first public release of idea-generator! Key features include:
+
+✨ **Core Capabilities**
+- Complete CLI tool with 5 commands: setup, ingest, summarize, group, run
+- AI-powered issue summarization with 4 quantitative metrics
+- Intelligent clustering and deduplication
+- Weighted ranking system with customizable priorities
+- JSON and Markdown report generation
+
+🔧 **Technical Features**
+- Full Ollama integration with multiple model support
+- GitHub API client with pagination and rate limit handling
+- Smart caching for offline re-use
+- Noise/spam filtering
+- 225+ unit tests
+
+📚 **Documentation**
+- Comprehensive README with quick start
+- Detailed usage guide in [docs/USAGE.md](docs/USAGE.md)
+- Complete environment variable reference
+- Troubleshooting guide and advanced topics
+- CI/CD integration examples
+
+See [CHANGELOG.md](CHANGELOG.md) for complete details, technical specifications, and roadmap.
+
 ## Prerequisites
 
 ### Required Software
@@ -81,37 +246,98 @@ The tool can be configured using environment variables, a `.env` file, or CLI ar
 cp .env.example .env
 ```
 
-2. Edit `.env` and configure your settings:
+2. Edit `.env` and configure your settings (see table below for all options)
 
+### Quick Configuration
+
+**Minimal setup for public repository:**
 ```bash
-# Required: GitHub repository to analyze
 IDEA_GEN_GITHUB_REPO=owner/repo
-
-# Optional: GitHub token for private repos or higher rate limits
-IDEA_GEN_GITHUB_TOKEN=your_github_token_here
-
-# Ollama configuration (defaults shown)
-IDEA_GEN_OLLAMA_HOST=http://localhost
-IDEA_GEN_OLLAMA_PORT=11434
-
-# Model selection (both default to llama3.2:latest)
-IDEA_GEN_MODEL_INNOVATOR=llama3.2:latest
-IDEA_GEN_MODEL_CRITIC=llama3.2:latest
 ```
+
+**With authentication (private repo or higher rate limits):**
+```bash
+IDEA_GEN_GITHUB_REPO=owner/repo
+IDEA_GEN_GITHUB_TOKEN=<your_token_here>
+```
+
+**Custom model:**
+```bash
+IDEA_GEN_MODEL_INNOVATOR=llama3.2:3b  # Faster, lighter
+```
+
+### Environment Variable Reference
+
+| Category | Variable | Default | Description | Required | Storage |
+|----------|----------|---------|-------------|----------|---------|
+| **GitHub** | `IDEA_GEN_GITHUB_REPO` | None | Repository to analyze (`owner/repo`) | For ingest/run | `.env` or CLI |
+| | `IDEA_GEN_GITHUB_TOKEN` | None | Personal Access Token (PAT) | For private repos | `.env` only* |
+| **Ollama** | `IDEA_GEN_OLLAMA_HOST` | `http://localhost` | Ollama server URL | No | `.env` or CLI |
+| | `IDEA_GEN_OLLAMA_PORT` | `11434` | Ollama server port | No | `.env` or CLI |
+| **Models** | `IDEA_GEN_MODEL_INNOVATOR` | `llama3.2:latest` | Model for summarization/grouping | No | `.env` or CLI |
+| | `IDEA_GEN_MODEL_CRITIC` | `llama3.2:latest` | Model for critic persona (unused) | No | `.env` or CLI |
+| **Directories** | `IDEA_GEN_OUTPUT_DIR` | `output` | Output directory for results | No | `.env` or CLI |
+| | `IDEA_GEN_DATA_DIR` | `data` | Data directory for ingested issues | No | `.env` or CLI |
+| | `IDEA_GEN_PERSONA_DIR` | `personas` | Persona metadata directory | No | `.env` or CLI |
+| **Processing** | `IDEA_GEN_MAX_TEXT_LENGTH` | `8000` | Max chars for issue body + comments | No | `.env` |
+| | `IDEA_GEN_SUMMARIZATION_MAX_TOKENS` | `4000` | Max tokens per issue for summarization | No | `.env` |
+| | `IDEA_GEN_GROUPING_MAX_BATCH_SIZE` | `20` | Max summaries per grouping batch | No | `.env` |
+| | `IDEA_GEN_GROUPING_MAX_BATCH_CHARS` | `50000` | Max chars per grouping batch | No | `.env` |
+| **API** | `IDEA_GEN_GITHUB_PER_PAGE` | `100` | Items per GitHub API page (max: 100) | No | `.env` |
+| | `IDEA_GEN_GITHUB_MAX_RETRIES` | `3` | Max retry attempts for GitHub API | No | `.env` |
+| | `IDEA_GEN_LLM_TIMEOUT` | `120.0` | LLM request timeout (seconds) | No | `.env` |
+| | `IDEA_GEN_LLM_MAX_RETRIES` | `3` | Max retry attempts for LLM requests | No | `.env` |
+| **Ranking** | `IDEA_GEN_RANKING_WEIGHT_NOVELTY` | `0.25` | Weight for novelty metric | No | `.env` |
+| | `IDEA_GEN_RANKING_WEIGHT_FEASIBILITY` | `0.25` | Weight for feasibility metric | No | `.env` |
+| | `IDEA_GEN_RANKING_WEIGHT_DESIRABILITY` | `0.30` | Weight for desirability metric | No | `.env` |
+| | `IDEA_GEN_RANKING_WEIGHT_ATTENTION` | `0.20` | Weight for attention metric | No | `.env` |
+| | `IDEA_GEN_TOP_IDEAS_COUNT` | `10` | Number of ideas in Markdown report | No | `.env` |
+| **Other** | `IDEA_GEN_NOISE_FILTER_ENABLED` | `true` | Enable noise/spam detection | No | `.env` |
+| | `IDEA_GEN_CACHE_MAX_FILE_SIZE` | `1000000` | Max cache file size (bytes) | No | `.env` |
+
+\* **Security Note**: Store tokens in `.env` file only (never commit to git). Avoid CLI arguments or shell exports as they may be exposed in logs and command history.
+
+📚 **See [docs/USAGE.md](docs/USAGE.md)** for detailed descriptions of each variable and configuration examples.
 
 ### Getting a GitHub Token
 
 For private repositories or to avoid rate limits:
 
-1. Go to GitHub Settings → Developer settings → Personal access tokens
-2. Generate a new token (classic) with `repo` scope for private repos, or `public_repo` scope for public repos
-3. Copy the token and add it to your `.env` file
+1. Go to [GitHub Settings → Developer settings → Personal access tokens](https://github.com/settings/tokens)
+2. Click "Generate new token (classic)"
+3. Select scopes:
+   - **`public_repo`**: For public repositories (read-only) - provides 5000 requests/hour
+   - **`repo`**: For private repositories (full access) - includes public_repo
+4. Copy the token and add it to your `.env` file
+
+⚠️ **Important**: Never commit `.env` files to version control. The `.gitignore` includes this by default.
 
 **Token Scopes:**
-- `public_repo`: Required for accessing public repositories (read-only)
-- `repo`: Required for accessing private repositories (includes `public_repo`)
+- `public_repo`: Read-only access to public repositories, higher rate limits (5000/hour vs 60/hour)
+- `repo`: Full access to public and private repositories (includes all repo permissions)
+
+**Security**: Store tokens only in `.env` file. Avoid CLI arguments or shell exports as they appear in command history and process listings.
 
 ## Usage
+
+The idea-generator follows a multi-stage pipeline. You can run each stage individually or use `run` to execute everything at once.
+
+📚 **For detailed instructions, see [docs/USAGE.md](docs/USAGE.md)** - comprehensive guide with examples, troubleshooting, and advanced topics.
+
+### Quick Command Reference
+
+```bash
+# Full pipeline (all stages)
+idea-generator run --github-repo owner/repo
+
+# Individual stages
+idea-generator setup                    # 1. Prepare environment
+idea-generator ingest -r owner/repo     # 2. Fetch issues
+idea-generator summarize -r owner/repo  # 3. Generate summaries
+idea-generator group -r owner/repo      # 4. Cluster issues
+```
+
+**All commands support `--help` for detailed options.**
 
 ### Step 1: Setup
 
@@ -493,6 +719,51 @@ This command orchestrates the complete end-to-end pipeline:
 4. **Rank** clusters by composite score with deterministic tie-breaking
 5. **Generate** JSON and Markdown reports in `output/reports/`
 
+📊 **Output Reports:**
+
+The pipeline generates two complementary reports:
+
+**1. `output/reports/ideas.json`** - Machine-readable complete dataset
+```json
+{
+  "clusters": [
+    {
+      "cluster_id": "ui-ux-001",
+      "title": "Theme customization and dark mode",
+      "summary": "Users request dark mode and theme switching...",
+      "topic_area": "UI/UX",
+      "metrics": {
+        "novelty": 0.35,
+        "feasibility": 0.75,
+        "desirability": 0.88,
+        "attention": 0.65,
+        "composite_score": 0.67
+      },
+      "member_issues": [42, 89, 103],
+      "source_urls": ["https://github.com/..."]
+    }
+  ],
+  "metadata": {
+    "total_clusters": 48,
+    "repository": "owner/repo",
+    "generated_at": "2025-12-05T23:30:00Z"
+  }
+}
+```
+
+**2. `output/reports/top-ideas.md`** - Human-readable summary
+```markdown
+# Top 10 Ideas for owner/repo
+
+## 🔥 #1: Theme customization and dark mode
+**Score: 0.67** | 📊 Novelty: 0.35 | ⚙️ Feasibility: 0.75 | ⭐ Desirability: 0.88 | 👥 Attention: 0.65
+
+Users request dark mode and theme switching capabilities...
+
+**Topic**: UI/UX | **Priority**: High
+**Source Issues**: #42, #89, #103
+```
+
 **Options:**
 - `--github-repo`, `-r`: GitHub repository in format 'owner/repo' (required)
 - `--github-token`, `-t`: GitHub API token (optional)
@@ -671,42 +942,62 @@ idea-generator/
 
 ## Troubleshooting
 
-### Ollama Not Found
+### Quick Fixes
 
-**Error**: `Ollama binary not found in PATH`
+**Ollama Not Found**
+```bash
+# Install Ollama
+curl -fsSL https://ollama.ai/install.sh | sh
 
-**Solution**:
-1. Install Ollama from https://ollama.ai/download
-2. Verify installation: `ollama --version`
-3. Ensure Ollama is in your system PATH
+# Verify
+ollama --version
+```
 
-### Ollama Server Not Running
+**Ollama Server Not Running**
+```bash
+# Start in separate terminal
+ollama serve
 
-**Error**: `Unable to connect to Ollama server`
+# Or in background
+nohup ollama serve > /tmp/ollama.log 2>&1 &
+```
 
-**Solution**:
-1. Start the Ollama server: `ollama serve`
-2. Check if running on a different port: `ps aux | grep ollama`
-3. Update `IDEA_GEN_OLLAMA_PORT` in `.env` if needed
+**Model Download Fails**
+```bash
+# Try smaller model first
+ollama pull llama3.2:3b
 
-### Model Download Fails
+# For air-gapped: copy ~/.ollama/models from another machine
+```
 
-**Error**: Model pull fails or times out
+**GitHub API Rate Limit**
+```bash
+# Create token at https://github.com/settings/tokens
+# Add to .env:
+IDEA_GEN_GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
-**Solution**:
-1. Check internet connection
-2. Retry: `ollama pull llama3.2:latest`
-3. Try a smaller model: `--model-innovator llama3.2:1b`
-4. For air-gapped environments, manually transfer models (see Ollama docs)
+# Provides 5000 requests/hour (vs 60 without token)
+```
 
-### Permission Denied Creating Directories
+**Out of Memory (LLM)**
+```bash
+# Use smaller model
+IDEA_GEN_MODEL_INNOVATOR=llama3.2:3b
 
-**Error**: Cannot create output directories
+# Or reduce batch sizes
+IDEA_GEN_GROUPING_MAX_BATCH_SIZE=10
+```
 
-**Solution**:
-1. Check directory permissions
-2. Specify custom directories: `--output-dir /path/to/writable/dir`
-3. Run with appropriate permissions
+**Permission Denied**
+```bash
+# Use custom directories
+idea-generator setup --output-dir ~/my-output --data-dir ~/my-data
+
+# Or fix permissions
+chmod u+w .
+```
+
+📚 **For more help, see [docs/USAGE.md#troubleshooting](docs/USAGE.md#troubleshooting)** - comprehensive troubleshooting guide with 10+ common issues and solutions.
 
 ## Advanced Configuration
 
@@ -755,6 +1046,10 @@ pytest tests/test_config.py
 
 # Run with verbose output
 pytest -v
+
+# Generate HTML coverage report
+pytest --cov=idea_generator --cov-report=html
+open htmlcov/index.html
 ```
 
 ### Code Quality
@@ -765,6 +1060,9 @@ black idea_generator tests
 
 # Lint with Ruff
 ruff check idea_generator tests
+
+# Fix linting issues automatically
+ruff check --fix idea_generator tests
 
 # Type check with MyPy
 mypy idea_generator
@@ -780,12 +1078,80 @@ dependencies = [
 ]
 ```
 
-Then regenerate the lock file:
+Then reinstall:
 
 ```bash
 pip install -e ".[dev]"
-pip freeze > requirements.txt  # Optional: for legacy tooling
 ```
+
+### Project Structure
+
+```
+idea-generator/
+├── idea_generator/           # Main package
+│   ├── cli.py               # CLI interface (Typer commands)
+│   ├── config.py            # Configuration management
+│   ├── models.py            # Pydantic models
+│   ├── setup.py             # Setup workflow
+│   ├── cleaning.py          # Data cleaning
+│   ├── filters.py           # Scoring and ranking
+│   ├── output.py            # Report generation
+│   ├── github_client.py     # GitHub API client
+│   ├── llm/                 # LLM integration
+│   │   ├── client.py        # Ollama client
+│   │   └── prompts/         # Persona prompts
+│   └── pipelines/           # Processing pipelines
+│       ├── summarize.py     # Summarization
+│       ├── grouping.py      # Clustering
+│       └── orchestrator.py  # Orchestration
+├── tests/                   # Test suite (225+ tests)
+├── docs/                    # Documentation
+│   └── USAGE.md            # Detailed usage guide
+├── output/                  # Generated output (created by setup)
+├── data/                    # Ingested data (created by setup)
+├── pyproject.toml          # Package configuration
+├── .env.example            # Environment template
+├── CHANGELOG.md            # Version history
+└── README.md               # This file
+```
+
+## Documentation
+
+### Available Documentation
+
+- **[README.md](README.md)** (this file): Quick start, architecture overview, command reference
+- **[docs/USAGE.md](docs/USAGE.md)**: Comprehensive usage guide with detailed instructions
+  - Prerequisites and installation
+  - Configuration reference
+  - Step-by-step workflow
+  - Complete command reference
+  - Troubleshooting (10+ scenarios)
+  - Advanced topics (offline use, performance tuning, CI/CD integration)
+- **[CHANGELOG.md](CHANGELOG.md)**: Version history, features, breaking changes, roadmap
+- **[.env.example](.env.example)**: Annotated configuration template
+
+### Documentation Topics
+
+**Getting Started**
+- [Quick Start](#quick-start) - 5-minute setup
+- [Installation](docs/USAGE.md#installation) - Detailed setup steps
+- [Configuration](docs/USAGE.md#configuration) - Environment variables
+
+**Using the Tool**
+- [Usage Workflow](docs/USAGE.md#usage-workflow) - Stage-by-stage guide
+- [Command Reference](docs/USAGE.md#command-reference) - All CLI commands with examples
+- [Troubleshooting](docs/USAGE.md#troubleshooting) - Common issues and solutions
+
+**Advanced**
+- [Architecture](#architecture) - System design and data flow
+- [Performance Tuning](docs/USAGE.md#performance-tuning) - Optimization strategies
+- [Offline Use](docs/USAGE.md#offline--air-gapped-environments) - Air-gapped deployment
+- [CI/CD Integration](docs/USAGE.md#cicd-integration) - Automation examples
+
+**Reference**
+- [Environment Variables](#environment-variable-reference) - Configuration table
+- [Project Structure](#project-structure) - Code organization
+- [Version History](CHANGELOG.md) - Changes and roadmap
 
 
 
