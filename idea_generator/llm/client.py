@@ -285,7 +285,12 @@ class OllamaClient:
             
         Note:
             Returns False on any error (network issues, server errors, etc.).
-            Errors are logged for debugging but not raised to allow graceful fallback.
+            Errors are logged as warnings for debugging. Callers should interpret
+            False as "use default behavior" (e.g., show error message, use fallback model).
+            
+            This design allows graceful degradation - if we can't verify the model
+            exists due to network/server issues, we let the actual generate() call
+            fail with a more specific error rather than blocking on validation.
         """
         try:
             models = self.list_models()
@@ -293,6 +298,6 @@ class OllamaClient:
         except OllamaError as e:
             logger.warning(
                 f"Unable to check if model '{model_name}' exists: {e}. "
-                "Returning False to allow fallback behavior."
+                "Returning False to allow caller to handle as missing model."
             )
             return False
