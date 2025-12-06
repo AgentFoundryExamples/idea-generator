@@ -90,6 +90,24 @@
           "children": [
             {
               "type": "directory",
+              "name": "modelfiles",
+              "children": [
+                {
+                  "type": "file",
+                  "name": "grouping.Modelfile"
+                },
+                {
+                  "type": "file",
+                  "name": "README.md"
+                },
+                {
+                  "type": "file",
+                  "name": "summarizer.Modelfile"
+                }
+              ]
+            },
+            {
+              "type": "directory",
               "name": "prompts",
               "children": [
                 {

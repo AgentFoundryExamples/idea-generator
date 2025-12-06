@@ -98,6 +98,7 @@
       "external_dependencies": {
         "stdlib": [
           "json",
+          "logging",
           "re",
           "time",
           "typing.Any"

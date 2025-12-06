@@ -39,8 +39,8 @@
       "summary": "Python command-line interface (role: cli)",
       "summary_text": "Python command-line interface (role: cli)",
       "metrics": {
-        "size_bytes": 32490,
-        "loc": 707,
+        "size_bytes": 34420,
+        "loc": 745,
         "todo_count": 0
       }
     },
@@ -53,8 +53,8 @@
       "summary": "Python configuration file (role: configuration)",
       "summary_text": "Python configuration file (role: configuration)",
       "metrics": {
-        "size_bytes": 9933,
-        "loc": 259,
+        "size_bytes": 10529,
+        "loc": 273,
         "todo_count": 0
       }
     },
@@ -109,8 +109,8 @@
       "summary": "Python module for client",
       "summary_text": "Python module for client",
       "metrics": {
-        "size_bytes": 8627,
-        "loc": 181,
+        "size_bytes": 10834,
+        "loc": 227,
         "todo_count": 0
       }
     },
@@ -179,8 +179,8 @@
       "summary": "Python module for orchestrator",
       "summary_text": "Python module for orchestrator",
       "metrics": {
-        "size_bytes": 16249,
-        "loc": 330,
+        "size_bytes": 17388,
+        "loc": 346,
         "todo_count": 0
       }
     },
@@ -263,8 +263,8 @@
       "summary": "Python test file (role: test)",
       "summary_text": "Python test file (role: test)",
       "metrics": {
-        "size_bytes": 7056,
-        "loc": 137,
+        "size_bytes": 7683,
+        "loc": 147,
         "todo_count": 0
       }
     },
@@ -333,8 +333,8 @@
       "summary": "Python test file (role: test)",
       "summary_text": "Python test file (role: test)",
       "metrics": {
-        "size_bytes": 13305,
-        "loc": 265,
+        "size_bytes": 16824,
+        "loc": 337,
         "todo_count": 0
       }
     },

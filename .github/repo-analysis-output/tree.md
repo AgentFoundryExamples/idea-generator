@@ -19,6 +19,10 @@
   └── USAGE.md
 ├── idea_generator
   ├── llm
+    ├── modelfiles
+      ├── grouping.Modelfile
+      ├── README.md
+      └── summarizer.Modelfile
     ├── prompts
       ├── grouper.txt
       └── summarizer.txt

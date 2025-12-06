@@ -29,8 +29,8 @@ Total files: 29
 **Role:** cli  
 **Role Justification:** CLI-related name 'cli'  
 **Summary:** Python command-line interface (role: cli)  
-**Size:** 31.73 KB  
-**LOC:** 707  
+**Size:** 33.61 KB  
+**LOC:** 745  
 **TODOs/FIXMEs:** 0  
 
 ## idea_generator/config.py
@@ -38,8 +38,8 @@ Total files: 29
 **Role:** configuration  
 **Role Justification:** configuration file name 'config'  
 **Summary:** Python configuration file (role: configuration)  
-**Size:** 9.70 KB  
-**LOC:** 259  
+**Size:** 10.28 KB  
+**LOC:** 273  
 **TODOs/FIXMEs:** 0  
 
 ## idea_generator/filters.py
@@ -74,8 +74,8 @@ Total files: 29
 **Role:** implementation  
 **Role Justification:** general implementation file (default classification)  
 **Summary:** Python module for client  
-**Size:** 8.42 KB  
-**LOC:** 181  
+**Size:** 10.58 KB  
+**LOC:** 227  
 **TODOs/FIXMEs:** 0  
 
 ## idea_generator/models.py
@@ -119,8 +119,8 @@ Total files: 29
 **Role:** implementation  
 **Role Justification:** general implementation file (default classification)  
 **Summary:** Python module for orchestrator  
-**Size:** 15.87 KB  
-**LOC:** 330  
+**Size:** 16.98 KB  
+**LOC:** 346  
 **TODOs/FIXMEs:** 0  
 
 ## idea_generator/pipelines/summarize.py
@@ -173,8 +173,8 @@ Total files: 29
 **Role:** test  
 **Role Justification:** filename starts with 'test_'  
 **Summary:** Python test file (role: test)  
-**Size:** 6.89 KB  
-**LOC:** 137  
+**Size:** 7.50 KB  
+**LOC:** 147  
 **TODOs/FIXMEs:** 0  
 
 ## tests/test_filters.py
@@ -218,8 +218,8 @@ Total files: 29
 **Role:** test  
 **Role Justification:** filename starts with 'test_'  
 **Summary:** Python test file (role: test)  
-**Size:** 12.99 KB  
-**LOC:** 265  
+**Size:** 16.43 KB  
+**LOC:** 337  
 **TODOs/FIXMEs:** 0  
 
 ## tests/test_models.py
