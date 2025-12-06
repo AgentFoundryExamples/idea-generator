@@ -53,6 +53,7 @@ class TestConfig:
         assert config.max_workers == 4
         assert config.github_per_page == 100
         assert config.github_max_retries == 3
+        assert config.github_issue_limit is None
         assert config.max_text_length == 8000
         assert config.noise_filter_enabled is True
 
@@ -179,6 +180,45 @@ class TestConfig:
         # Paths should be absolute
         assert config.output_dir.is_absolute()
         assert config.data_dir.is_absolute()
+
+    def test_config_issue_limit_validation(self) -> None:
+        """Test issue limit validation."""
+        # Valid issue limits
+        config = Config(github_issue_limit=None)
+        assert config.github_issue_limit is None
+
+        config = Config(github_issue_limit=50)
+        assert config.github_issue_limit == 50
+
+        config = Config(github_issue_limit=1)
+        assert config.github_issue_limit == 1
+
+        # Invalid issue limits
+        with pytest.raises(ValidationError):
+            Config(github_issue_limit=0)
+
+        with pytest.raises(ValidationError):
+            Config(github_issue_limit=-1)
+
+    def test_load_config_with_issue_limit(self) -> None:
+        """Test load_config function with issue_limit parameter."""
+        config = load_config(github_issue_limit=100)
+        assert config.github_issue_limit == 100
+
+        # None should be preserved
+        config = load_config(github_issue_limit=None)
+        assert config.github_issue_limit is None
+
+    def test_config_issue_limit_from_env(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Test loading issue limit from environment variable."""
+        monkeypatch.setenv("IDEA_GEN_GITHUB_ISSUE_LIMIT", "250")
+        config = Config()
+        assert config.github_issue_limit == 250
+
+        # Test with None/unset
+        monkeypatch.delenv("IDEA_GEN_GITHUB_ISSUE_LIMIT", raising=False)
+        config = Config()
+        assert config.github_issue_limit is None
 
 
 class TestConfigEnvFile:

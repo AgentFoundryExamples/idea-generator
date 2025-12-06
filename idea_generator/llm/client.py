@@ -282,12 +282,12 @@ class OllamaClient:
 
         Returns:
             True if the model exists, False otherwise
-            
+
         Note:
             Returns False on any error (network issues, server errors, etc.).
             Errors are logged as warnings for debugging. Callers should interpret
             False as "use default behavior" (e.g., show error message, use fallback model).
-            
+
             This design allows graceful degradation - if we can't verify the model
             exists due to network/server issues, we let the actual generate() call
             fail with a more specific error rather than blocking on validation.

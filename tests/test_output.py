@@ -16,13 +16,13 @@ Tests for output generation.
 """
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
 
-from idea_generator.models import IdeaCluster, NormalizedComment, NormalizedIssue
+from idea_generator.models import IdeaCluster, NormalizedIssue
 from idea_generator.output import (
     _get_priority_tag,
     generate_json_report,
@@ -44,8 +44,8 @@ def sample_issues() -> list[NormalizedIssue]:
             reactions={"+1": 10},
             comments=[],
             url="https://github.com/owner/repo/issues/1",
-            created_at=datetime(2025, 1, 1, tzinfo=timezone.utc),
-            updated_at=datetime(2025, 1, 2, tzinfo=timezone.utc),
+            created_at=datetime(2025, 1, 1, tzinfo=UTC),
+            updated_at=datetime(2025, 1, 2, tzinfo=UTC),
             is_noise=False,
         ),
         NormalizedIssue(
@@ -58,8 +58,8 @@ def sample_issues() -> list[NormalizedIssue]:
             reactions={"+1": 20, "heart": 5},
             comments=[],
             url="https://github.com/owner/repo/issues/2",
-            created_at=datetime(2025, 1, 3, tzinfo=timezone.utc),
-            updated_at=datetime(2025, 1, 4, tzinfo=timezone.utc),
+            created_at=datetime(2025, 1, 3, tzinfo=UTC),
+            updated_at=datetime(2025, 1, 4, tzinfo=UTC),
             is_noise=False,
         ),
         NormalizedIssue(
@@ -72,8 +72,8 @@ def sample_issues() -> list[NormalizedIssue]:
             reactions={},
             comments=[],
             url="https://github.com/owner/repo/issues/3",
-            created_at=datetime(2025, 1, 5, tzinfo=timezone.utc),
-            updated_at=datetime(2025, 1, 5, tzinfo=timezone.utc),
+            created_at=datetime(2025, 1, 5, tzinfo=UTC),
+            updated_at=datetime(2025, 1, 5, tzinfo=UTC),
             is_noise=True,
             noise_reason="Spam pattern detected",
         ),
@@ -232,9 +232,7 @@ class TestGenerateJsonReport:
                 + cluster.attention * 0.1
             )
 
-            actual = next(c for c in data if c["cluster_id"] == "cluster-1")[
-                "composite_score"
-            ]
+            actual = next(c for c in data if c["cluster_id"] == "cluster-1")["composite_score"]
             assert pytest.approx(actual, 0.001) == expected
 
     def test_creates_parent_directory(
@@ -292,9 +290,7 @@ class TestGenerateMarkdownReport:
         """Test that report limits to top N clusters."""
         with TemporaryDirectory() as tmpdir:
             output_path = Path(tmpdir) / "top-ideas.md"
-            generate_markdown_report(
-                sample_clusters, sample_issues, output_path, top_n=2
-            )
+            generate_markdown_report(sample_clusters, sample_issues, output_path, top_n=2)
 
             with open(output_path, encoding="utf-8") as f:
                 content = f.read()

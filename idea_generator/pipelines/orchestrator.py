@@ -232,7 +232,9 @@ class Orchestrator:
                     raise OrchestratorError(f"Repository {owner}/{repo} not accessible")
 
                 # Fetch issues
-                issues_data = client.fetch_issues(owner, repo, state="open")
+                issues_data = client.fetch_issues(
+                    owner, repo, state="open", limit=self.config.github_issue_limit
+                )
                 if not issues_data:
                     logger.warning("No open issues found")
                     return []
@@ -265,9 +267,7 @@ class Orchestrator:
             raise OrchestratorError(f"Failed to ingest issues from GitHub: {e}") from e
         except Exception as e:
             logger.exception("Unexpected error during issue ingestion")
-            raise OrchestratorError(
-                f"Failed to ingest issues: {e.__class__.__name__}: {e}"
-            ) from e
+            raise OrchestratorError(f"Failed to ingest issues: {e.__class__.__name__}: {e}") from e
 
     def _summarize_issues(self, issues: list[NormalizedIssue]) -> list[SummarizedIssue]:
         """

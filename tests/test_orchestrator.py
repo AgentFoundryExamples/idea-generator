@@ -16,7 +16,7 @@ Tests for orchestration pipeline.
 """
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import Mock, patch
@@ -55,8 +55,8 @@ def sample_issue() -> NormalizedIssue:
         reactions={"+1": 5},
         comments=[],
         url="https://github.com/owner/repo/issues/1",
-        created_at=datetime(2025, 1, 1, tzinfo=timezone.utc),
-        updated_at=datetime(2025, 1, 2, tzinfo=timezone.utc),
+        created_at=datetime(2025, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2025, 1, 2, tzinfo=UTC),
         is_noise=False,
     )
 
@@ -153,7 +153,7 @@ class TestOrchestratorRun:
         mock_github_client.return_value = mock_client
 
         orchestrator = Orchestrator(temp_config)
-        results = orchestrator.run()
+        orchestrator.run()
 
         # Should have empty reports
         reports_dir = temp_config.output_dir / "reports"
@@ -390,24 +390,20 @@ class TestOrchestratorCaching:
 
         # Mock should not be called since we have cached data
         # But we need to mock the downstream stages
-        with patch(
-            "idea_generator.pipelines.orchestrator.OllamaClient"
-        ) as mock_ollama:
+        with patch("idea_generator.pipelines.orchestrator.OllamaClient") as mock_ollama:
             mock_llm = Mock()
             mock_llm.check_health = Mock(return_value=True)
             mock_llm.close = Mock()
             mock_ollama.return_value = mock_llm
 
-            with patch(
-                "idea_generator.pipelines.orchestrator.SummarizationPipeline"
-            ) as mock_sum:
+            with patch("idea_generator.pipelines.orchestrator.SummarizationPipeline") as mock_sum:
                 mock_sum_pipeline = Mock()
                 mock_sum_pipeline.summarize_issues = Mock(return_value=[])
                 mock_sum.return_value = mock_sum_pipeline
 
                 # This should use cached issues without calling GitHub API
                 orchestrator._ingest_issues = Mock(return_value=[sample_issue])
-                results = orchestrator.run()
+                orchestrator.run()
 
                 # Verify GitHub client was not instantiated
                 mock_github_client.assert_not_called()

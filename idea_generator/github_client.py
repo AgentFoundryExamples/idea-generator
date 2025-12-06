@@ -189,7 +189,7 @@ class GitHubClient:
             raise GitHubAPIError(f"Request failed after {self.max_retries} retries: {e}") from e
 
     def _paginate(
-        self, endpoint: str, params: dict[str, Any] | None = None
+        self, endpoint: str, params: dict[str, Any] | None = None, limit: int | None = None
     ) -> list[dict[str, Any]]:
         """
         Paginate through all pages of a GitHub API endpoint.
@@ -197,9 +197,10 @@ class GitHubClient:
         Args:
             endpoint: API endpoint
             params: Query parameters
+            limit: Maximum number of items to fetch (None for no limit)
 
         Returns:
-            List of all items from all pages
+            List of all items from all pages (up to limit if specified)
         """
         params = params or {}
         params["per_page"] = self.per_page
@@ -222,6 +223,11 @@ class GitHubClient:
 
             all_items.extend(items)
 
+            # Stop early if limit is reached
+            if limit is not None and len(all_items) >= limit:
+                all_items = all_items[:limit]
+                break
+
             # Check if there are more pages
             if len(items) < self.per_page:
                 break
@@ -230,29 +236,52 @@ class GitHubClient:
 
         return all_items
 
-    def fetch_issues(self, owner: str, repo: str, state: str = "open") -> list[dict[str, Any]]:
+    def fetch_issues(
+        self, owner: str, repo: str, state: str = "open", limit: int | None = None
+    ) -> list[dict[str, Any]]:
         """
-        Fetch all issues from a repository.
+        Fetch issues from a repository, sorted by most recently updated.
 
         Args:
             owner: Repository owner
             repo: Repository name
             state: Issue state filter (open, closed, all)
+            limit: Maximum number of issues to return (None for no limit)
 
         Returns:
-            List of issue data dictionaries
+            List of issue data dictionaries, sorted by updated_at descending
         """
         endpoint = f"/repos/{owner}/{repo}/issues"
-        params = {"state": state, "sort": "created", "direction": "asc"}
+        # Sort by updated (most recent first) for recency preference
+        params = {"state": state, "sort": "updated", "direction": "desc"}
 
-        issues = self._paginate(endpoint, params)
+        issues = self._paginate(endpoint, params, limit=limit)
 
         # Cache the raw response
         if self.cache_dir:
-            self._cache_response(f"{owner}_{repo}_issues_{state}", issues)
+            cache_key = f"{owner}_{repo}_issues_{state}"
+            if limit:
+                cache_key += f"_limit{limit}"
+            self._cache_response(cache_key, issues)
 
         # Filter out pull requests (they appear in the issues endpoint)
-        return [issue for issue in issues if "pull_request" not in issue]
+        filtered_issues = [issue for issue in issues if "pull_request" not in issue]
+
+        # Apply deterministic tiebreaker for identical timestamps
+        # Sort by (updated_at, issue_number) both descending
+        # - updated_at: Most recently updated issues first
+        # - issue_number: When timestamps match, higher numbers (newer issues) first
+        # - Missing timestamps use epoch date to sort to end
+        # Note: GitHub issue numbers increment sequentially, so higher numbers = newer issues
+        filtered_issues.sort(
+            key=lambda x: (
+                x.get("updated_at", "1970-01-01T00:00:00Z"),
+                x.get("number", 0),
+            ),
+            reverse=True,
+        )
+
+        return filtered_issues
 
     def fetch_issue_comments(
         self, owner: str, repo: str, issue_number: int

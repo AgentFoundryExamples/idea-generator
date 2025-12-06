@@ -133,7 +133,7 @@ class TestRankClusters:
 
         # All clusters should be present
         assert len(ranked) == 3
-        assert set(c.cluster_id for c in ranked) == {"cluster-1", "cluster-2", "cluster-3"}
+        assert {c.cluster_id for c in ranked} == {"cluster-1", "cluster-2", "cluster-3"}
 
     def test_deterministic_ordering(self, sample_clusters: list[IdeaCluster]) -> None:
         """Test that ranking is deterministic across multiple calls."""
@@ -239,9 +239,7 @@ class TestRankClusters:
         assert ranked_novelty[0].cluster_id == "cluster-2"
 
         # Order should be different
-        assert [c.cluster_id for c in ranked_default] != [
-            c.cluster_id for c in ranked_novelty
-        ]
+        assert [c.cluster_id for c in ranked_default] != [c.cluster_id for c in ranked_novelty]
 
 
 class TestAddCompositeScores:
