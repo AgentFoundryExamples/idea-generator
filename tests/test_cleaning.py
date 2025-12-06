@@ -331,7 +331,7 @@ class TestIsSupportTicket:
             labels=[],
         )
         assert is_support is True
-        assert "keyword" in reason.lower()
+        assert "support ticket indicator" in reason.lower() or "question keyword" in reason.lower()
 
     def test_how_can_i_keyword(self) -> None:
         """Test issue with 'how can I' keyword."""
@@ -459,7 +459,7 @@ class TestIsLowSignalIssue:
         assert is_low is True
         assert reason is not None
         # Should be flagged due to "how do I" keyword
-        assert "keyword" in reason.lower() or "pattern" in reason.lower()
+        assert "support ticket indicator" in reason.lower() or "question keyword" in reason.lower()
 
     def test_ignores_support_when_disabled(self) -> None:
         """Test that support tickets are ignored when disabled."""

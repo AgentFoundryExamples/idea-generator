@@ -318,10 +318,22 @@ def is_support_ticket(
     # Combine title and body for keyword search
     combined_text = f"{title} {body}".lower()
 
+    # Map patterns to user-friendly descriptions
+    pattern_descriptions = {
+        r"\bhow\s+(?:do\s+i|can\s+i|to)\b": "question keyword (how do I/can I/to)",
+        r"\bwhat\s+(?:is|are)\s+the\b": "question keyword (what is/are the)",
+        r"\bwhere\s+(?:do\s+i|can\s+i)\b": "question keyword (where do I/can I)",
+        r"\bwhy\s+(?:is|are|does|doesn't)\b": "question keyword (why is/does)",
+        r"\bhelp\s+(?:me|with|needed)\b": "help request keyword",
+        r"\bcannot\s+(?:figure\s+out|understand|get)\b": "confusion indicator",
+        r"\bcan\s+someone\s+(?:help|explain|show)\b": "help request",
+        r"\bneed\s+help\b": "help request keyword",
+    }
+
     # Check for support keywords in title and body
-    for pattern in SUPPORT_KEYWORDS:
+    for pattern, description in pattern_descriptions.items():
         if re.search(pattern, combined_text, re.IGNORECASE):
-            return True, f"Support keyword pattern detected: {pattern}"
+            return True, f"Support ticket indicator: {description}"
 
     return False, None
 
