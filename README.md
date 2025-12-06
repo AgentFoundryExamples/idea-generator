@@ -300,8 +300,9 @@ IDEA_GEN_MODEL_INNOVATOR=llama3.2:3b  # Faster, lighter
 | | `IDEA_GEN_RANKING_WEIGHT_DESIRABILITY` | `0.30` | Weight for desirability metric | No | `.env` |
 | | `IDEA_GEN_RANKING_WEIGHT_ATTENTION` | `0.20` | Weight for attention metric | No | `.env` |
 | | `IDEA_GEN_TOP_IDEAS_COUNT` | `10` | Number of ideas in Markdown report | No | `.env` |
-| **Other** | `IDEA_GEN_NOISE_FILTER_ENABLED` | `true` | Enable noise/spam detection | No | `.env` |
-| | `IDEA_GEN_CACHE_MAX_FILE_SIZE` | `1000000` | Max cache file size (bytes) | No | `.env` |
+| **Filtering** | `IDEA_GEN_NOISE_FILTER_ENABLED` | `true` | Enable noise/spam detection | No | `.env` |
+| | `IDEA_GEN_SUPPORT_FILTER_ENABLED` | `true` | Enable support ticket/question filtering | No | `.env` |
+| **Other** | `IDEA_GEN_CACHE_MAX_FILE_SIZE` | `1000000` | Max cache file size (bytes) | No | `.env` |
 
 \* **Security Note**: Store tokens in `.env` file only (never commit to git). Avoid CLI arguments or shell exports as they may be exposed in logs and command history.
 
@@ -454,14 +455,37 @@ To ensure data fits within LLM context windows:
 
 **Noise Filtering:**
 
-Issues are automatically flagged (but not removed) if they match noise patterns:
-- Spam labels (spam, invalid, wontfix, duplicate)
-- Bot authors (dependabot, renovate, etc.)
-- Single-word titles
-- Empty or very short bodies
-- Common spam patterns (test, testing, hello, hi, hey)
+Issues are automatically flagged (but not removed) if they match low-signal patterns:
 
-Flagged issues are included in the output with `is_noise: true` and a `noise_reason` field.
+**Basic Noise Detection:**
+- Non-actionable labels: spam, invalid, wontfix, duplicate, off-topic, declined, stale
+- Bot authors: dependabot, renovate, and other bots
+- Single-word titles
+- Empty or very short bodies (< 10 characters)
+- Common spam patterns: test, testing, hello, hi, hey
+
+**Support Ticket Detection (configurable via `IDEA_GEN_SUPPORT_FILTER_ENABLED`):**
+- Support/question labels: support, question, help wanted, needs help, how-to, usage, discussion
+- Question keywords in title or body:
+  - "how do I", "how can I", "how to"
+  - "what is the", "what are the"
+  - "where do I", "where can I"
+  - "why is", "why doesn't"
+  - "need help", "can someone help"
+  - "cannot figure out", "cannot understand"
+
+**Note:** Support ticket filtering is enabled by default to reduce noise in idea generation. To disable:
+```bash
+IDEA_GEN_SUPPORT_FILTER_ENABLED=false
+```
+
+**Important Caveats:**
+- Over-filtering may occur for legitimate issues using question-like phrasing
+- Projects repurposing labels like "question" for valid work should disable support filtering
+- English-centric keyword matching may not work for non-English repositories
+- All filtering is deterministic and does not use LLM inference
+
+Flagged issues are included in the output with `is_noise: true` and a `noise_reason` field describing why they were flagged.
 
 **Output Format:**
 
