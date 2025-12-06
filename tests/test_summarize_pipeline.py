@@ -152,14 +152,16 @@ class TestSummarizationPipelineInit:
 
     def test_prompt_contains_schema_reminders(self, mock_llm_client: Mock) -> None:
         """Test that prompt template contains explicit schema field requirements."""
-        from pathlib import Path
-
-        prompt_path = Path(__file__).parent.parent / "idea_generator" / "llm" / "prompts" / "summarizer.txt"
+        try:
+            from importlib.resources import files
+        except ImportError:
+            pytest.skip("importlib.resources.files not available")
         
-        if not prompt_path.exists():
+        try:
+            prompt_path = files("idea_generator.llm.prompts").joinpath("summarizer.txt")
+            prompt_text = prompt_path.read_text()
+        except (ModuleNotFoundError, FileNotFoundError):
             pytest.skip("Prompt template not found in expected location")
-        
-        prompt_text = prompt_path.read_text()
         
         # Verify schema reminders are present
         assert "Required JSON Schema" in prompt_text, "Prompt should contain explicit schema section"
