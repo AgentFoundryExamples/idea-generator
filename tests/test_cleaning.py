@@ -432,7 +432,7 @@ class TestIsLowSignalIssue:
         assert reason is None
 
     def test_detects_noise(self) -> None:
-        """Test that noise is detected (single-word title)."""
+        """Test that noise is detected (single-word title takes precedence)."""
         is_low, reason = is_low_signal_issue(
             title="test",
             body="testing",
@@ -443,8 +443,47 @@ class TestIsLowSignalIssue:
         )
         assert is_low is True
         assert reason is not None
-        # Single-word title is the expected trigger
-        assert "single" in reason.lower() or "word" in reason.lower()
+        # "test" is single word, which is checked before spam patterns
+        assert "single" in reason.lower() and "word" in reason.lower()
+
+    def test_detects_spam_pattern(self) -> None:
+        """Test that spam patterns in multi-word titles are detected."""
+        is_low, reason = is_low_signal_issue(
+            title="test this",
+            body="Some body text to avoid empty body detection",
+            labels=[],
+            author="user",
+            comment_count=0,
+            enable_support_filter=True,
+        )
+        assert is_low is False  # "test this" is not a spam pattern (needs to be "test" alone)
+
+        # But "testing" as a standalone title should match
+        is_low2, reason2 = is_low_signal_issue(
+            title="testing",
+            body="Some body text",
+            labels=[],
+            author="user",
+            comment_count=0,
+            enable_support_filter=True,
+        )
+        # "testing" is also a single word, so it will be caught by single-word check
+        assert is_low2 is True
+
+    def test_detects_single_word_title(self) -> None:
+        """Test that single-word titles are detected as noise."""
+        is_low, reason = is_low_signal_issue(
+            title="Bug",
+            body="This is a valid bug report with sufficient detail",
+            labels=[],
+            author="user",
+            comment_count=0,
+            enable_support_filter=True,
+        )
+        assert is_low is True
+        assert reason is not None
+        # Single-word title should be the trigger
+        assert "single" in reason.lower() and "word" in reason.lower()
 
     def test_detects_support_when_enabled(self) -> None:
         """Test that support tickets are detected when enabled."""

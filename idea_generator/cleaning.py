@@ -42,17 +42,26 @@ SPAM_PATTERNS = [
     r"^hey\s*$",
 ]
 
-# Support ticket / question patterns (case-insensitive)
-SUPPORT_KEYWORDS = [
-    r"\bhow\s+(?:do\s+i|can\s+i|to)\b",  # "how do I", "how can I", "how to"
-    r"\bwhat\s+(?:is|are)\s+the\b",  # "what is the", "what are the"
-    r"\bwhere\s+(?:do\s+i|can\s+i)\b",  # "where do I", "where can I"
-    r"\bwhy\s+(?:is|are|does|doesn't)\b",  # "why is", "why doesn't"
-    r"\bhelp\s+(?:me|with|needed)\b",  # "help me", "help with", "help needed"
-    r"\bcannot\s+(?:figure\s+out|understand|get)\b",  # "cannot figure out"
-    r"\bcan\s+someone\s+(?:help|explain|show)\b",  # "can someone help"
-    r"\bneed\s+help\b",  # "need help"
-]
+# Support ticket / question patterns (pre-compiled for performance)
+# Map compiled patterns to user-friendly descriptions
+SUPPORT_KEYWORD_PATTERNS = {
+    re.compile(
+        r"\bhow\s+(?:do\s+i|can\s+i|to)\b", re.IGNORECASE
+    ): "question keyword (how do I/can I/to)",
+    re.compile(r"\bwhat\s+(?:is|are)\s+the\b", re.IGNORECASE): "question keyword (what is/are the)",
+    re.compile(
+        r"\bwhere\s+(?:do\s+i|can\s+i)\b", re.IGNORECASE
+    ): "question keyword (where do I/can I)",
+    re.compile(
+        r"\bwhy\s+(?:is|are|does|doesn't)\b", re.IGNORECASE
+    ): "question keyword (why is/does)",
+    re.compile(r"\bhelp\s+(?:me|with|needed)\b", re.IGNORECASE): "help request keyword",
+    re.compile(
+        r"\bcannot\s+(?:figure\s+out|understand|get)\b", re.IGNORECASE
+    ): "confusion indicator",
+    re.compile(r"\bcan\s+someone\s+(?:help|explain|show)\b", re.IGNORECASE): "help request",
+    re.compile(r"\bneed\s+help\b", re.IGNORECASE): "help request keyword",
+}
 
 # Labels that typically indicate support/questions/low-signal issues
 # NOTE: "help wanted" is included here as it often indicates requests for assistance
@@ -318,21 +327,9 @@ def is_support_ticket(
     # Combine title and body for keyword search
     combined_text = f"{title} {body}".lower()
 
-    # Map patterns to user-friendly descriptions
-    pattern_descriptions = {
-        r"\bhow\s+(?:do\s+i|can\s+i|to)\b": "question keyword (how do I/can I/to)",
-        r"\bwhat\s+(?:is|are)\s+the\b": "question keyword (what is/are the)",
-        r"\bwhere\s+(?:do\s+i|can\s+i)\b": "question keyword (where do I/can I)",
-        r"\bwhy\s+(?:is|are|does|doesn't)\b": "question keyword (why is/does)",
-        r"\bhelp\s+(?:me|with|needed)\b": "help request keyword",
-        r"\bcannot\s+(?:figure\s+out|understand|get)\b": "confusion indicator",
-        r"\bcan\s+someone\s+(?:help|explain|show)\b": "help request",
-        r"\bneed\s+help\b": "help request keyword",
-    }
-
-    # Check for support keywords in title and body
-    for pattern, description in pattern_descriptions.items():
-        if re.search(pattern, combined_text, re.IGNORECASE):
+    # Check for support keywords in title and body using pre-compiled patterns
+    for pattern, description in SUPPORT_KEYWORD_PATTERNS.items():
+        if pattern.search(combined_text):
             return True, f"Support ticket indicator: {description}"
 
     return False, None
