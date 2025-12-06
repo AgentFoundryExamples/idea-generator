@@ -25,8 +25,8 @@
       "summary": "Python module for cleaning",
       "summary_text": "Python module for cleaning",
       "metrics": {
-        "size_bytes": 12673,
-        "loc": 254,
+        "size_bytes": 16917,
+        "loc": 347,
         "todo_count": 0
       }
     },
@@ -39,8 +39,8 @@
       "summary": "Python command-line interface (role: cli)",
       "summary_text": "Python command-line interface (role: cli)",
       "metrics": {
-        "size_bytes": 35073,
-        "loc": 763,
+        "size_bytes": 35147,
+        "loc": 764,
         "todo_count": 0
       }
     },
@@ -53,8 +53,8 @@
       "summary": "Python configuration file (role: configuration)",
       "summary_text": "Python configuration file (role: configuration)",
       "metrics": {
-        "size_bytes": 10848,
-        "loc": 281,
+        "size_bytes": 11150,
+        "loc": 288,
         "todo_count": 0
       }
     },
@@ -179,8 +179,8 @@
       "summary": "Python module for orchestrator",
       "summary_text": "Python module for orchestrator",
       "metrics": {
-        "size_bytes": 17434,
-        "loc": 346,
+        "size_bytes": 17517,
+        "loc": 347,
         "todo_count": 0
       }
     },
@@ -235,8 +235,8 @@
       "summary": "Python test file (role: test)",
       "summary_text": "Python test file (role: test)",
       "metrics": {
-        "size_bytes": 18312,
-        "loc": 420,
+        "size_bytes": 27912,
+        "loc": 652,
         "todo_count": 0
       }
     },
