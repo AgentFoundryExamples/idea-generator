@@ -17,6 +17,7 @@ Tests for the summarization pipeline.
 
 import json
 from datetime import UTC, datetime
+from importlib.resources import files
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import Mock
@@ -152,11 +153,6 @@ class TestSummarizationPipelineInit:
 
     def test_prompt_contains_schema_reminders(self, mock_llm_client: Mock) -> None:
         """Test that prompt template contains explicit schema field requirements."""
-        try:
-            from importlib.resources import files
-        except ImportError:
-            pytest.skip("importlib.resources.files not available")
-        
         try:
             prompt_path = files("idea_generator.llm.prompts").joinpath("summarizer.txt")
             prompt_text = prompt_path.read_text()
