@@ -287,6 +287,7 @@ def ingest(
                     comments,
                     max_text_length=config.max_text_length,
                     noise_filter_enabled=config.noise_filter_enabled,
+                    support_filter_enabled=config.support_filter_enabled,
                 )
                 normalized_issues.append(normalized)
 

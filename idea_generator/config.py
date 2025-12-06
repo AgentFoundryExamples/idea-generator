@@ -140,6 +140,10 @@ class Config(BaseSettings):
         default=True,
         description="Enable noise/spam filtering for issues",
     )
+    support_filter_enabled: bool = Field(
+        default=True,
+        description="Enable support ticket/question filtering for issues",
+    )
 
     # LLM/Summarization configuration
     llm_timeout: float = Field(
@@ -284,6 +288,7 @@ def load_config(
     github_issue_limit: int | None = None,
     max_text_length: int | None = None,
     noise_filter_enabled: bool | None = None,
+    support_filter_enabled: bool | None = None,
     output_dir: Path | None = None,
     data_dir: Path | None = None,
     persona_dir: Path | None = None,
@@ -325,6 +330,8 @@ def load_config(
         kwargs["max_text_length"] = max_text_length
     if noise_filter_enabled is not None:
         kwargs["noise_filter_enabled"] = noise_filter_enabled
+    if support_filter_enabled is not None:
+        kwargs["support_filter_enabled"] = support_filter_enabled
     if output_dir is not None:
         kwargs["output_dir"] = output_dir
     if data_dir is not None:
