@@ -246,3 +246,42 @@ class OllamaClient:
             return response.status_code == 200
         except Exception:
             return False
+
+    def list_models(self) -> list[str]:
+        """
+        List available models on the Ollama server.
+
+        Returns:
+            List of model names available on the server
+
+        Raises:
+            OllamaError: If the server is unreachable or returns an error
+        """
+        try:
+            response = self.client.get("/api/tags")
+            response.raise_for_status()
+            data: dict[str, Any] = response.json()
+            models = data.get("models", [])
+            return [model["name"] for model in models if "name" in model]
+        except httpx.HTTPStatusError as e:
+            raise OllamaError(f"Failed to list models: HTTP {e.response.status_code}") from e
+        except httpx.RequestError as e:
+            raise OllamaError(f"Failed to connect to Ollama server: {e}") from e
+        except (KeyError, TypeError) as e:
+            raise OllamaError(f"Invalid response from Ollama server: {e}") from e
+
+    def model_exists(self, model_name: str) -> bool:
+        """
+        Check if a specific model is available on the Ollama server.
+
+        Args:
+            model_name: Name of the model to check (e.g., "llama3.2:latest")
+
+        Returns:
+            True if the model exists, False otherwise
+        """
+        try:
+            models = self.list_models()
+            return model_name in models
+        except OllamaError:
+            return False

@@ -382,3 +382,105 @@ class TestCheckHealth:
         assert client.check_health() is False
 
         client.close()
+
+
+class TestListModels:
+    """Tests for list_models() method."""
+
+    def test_list_models_success(self) -> None:
+        """Test successful model listing."""
+        mock_response = {
+            "models": [
+                {"name": "llama3.2:latest", "size": 1000000},
+                {"name": "mistral:latest", "size": 2000000},
+                {"name": "idea-generator-grouping", "size": 1500000},
+            ]
+        }
+        transport = MockTransport({"/api/tags": {"json": mock_response}})
+        client = OllamaClient(transport=transport)
+
+        models = client.list_models()
+
+        assert len(models) == 3
+        assert "llama3.2:latest" in models
+        assert "mistral:latest" in models
+        assert "idea-generator-grouping" in models
+
+        client.close()
+
+    def test_list_models_empty(self) -> None:
+        """Test listing models when none are available."""
+        transport = MockTransport({"/api/tags": {"json": {"models": []}}})
+        client = OllamaClient(transport=transport)
+
+        models = client.list_models()
+
+        assert models == []
+
+        client.close()
+
+    def test_list_models_server_error(self) -> None:
+        """Test listing models with server error."""
+        transport = MockTransport({"/api/tags": {"status": 500, "json": {}}})
+        client = OllamaClient(transport=transport)
+
+        with pytest.raises(OllamaError, match="Failed to list models"):
+            client.list_models()
+
+        client.close()
+
+    def test_list_models_network_error(self) -> None:
+        """Test listing models with network error."""
+
+        class ErrorTransport(httpx.HTTPTransport):
+            def handle_request(self, request: httpx.Request) -> httpx.Response:
+                raise httpx.ConnectError("Connection refused")
+
+        transport = ErrorTransport()
+        client = OllamaClient(transport=transport)
+
+        with pytest.raises(OllamaError, match="Failed to connect"):
+            client.list_models()
+
+        client.close()
+
+
+class TestModelExists:
+    """Tests for model_exists() method."""
+
+    def test_model_exists_true(self) -> None:
+        """Test checking if a model exists (true case)."""
+        mock_response = {
+            "models": [
+                {"name": "llama3.2:latest", "size": 1000000},
+                {"name": "idea-generator-grouping", "size": 1500000},
+            ]
+        }
+        transport = MockTransport({"/api/tags": {"json": mock_response}})
+        client = OllamaClient(transport=transport)
+
+        assert client.model_exists("llama3.2:latest") is True
+        assert client.model_exists("idea-generator-grouping") is True
+
+        client.close()
+
+    def test_model_exists_false(self) -> None:
+        """Test checking if a model exists (false case)."""
+        mock_response = {"models": [{"name": "llama3.2:latest", "size": 1000000}]}
+        transport = MockTransport({"/api/tags": {"json": mock_response}})
+        client = OllamaClient(transport=transport)
+
+        assert client.model_exists("nonexistent-model") is False
+        assert client.model_exists("idea-generator-grouping") is False
+
+        client.close()
+
+    def test_model_exists_on_error(self) -> None:
+        """Test that model_exists returns False on error."""
+        transport = MockTransport({"/api/tags": {"status": 500, "json": {}}})
+        client = OllamaClient(transport=transport)
+
+        # Should return False instead of raising an error
+        assert client.model_exists("llama3.2:latest") is False
+
+        client.close()

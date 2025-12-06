@@ -279,8 +279,10 @@ IDEA_GEN_MODEL_INNOVATOR=llama3.2:3b  # Faster, lighter
 | | `IDEA_GEN_GITHUB_TOKEN` | None | Personal Access Token (PAT) | For private repos | `.env` only* |
 | **Ollama** | `IDEA_GEN_OLLAMA_HOST` | `http://localhost` | Ollama server URL | No | `.env` or CLI |
 | | `IDEA_GEN_OLLAMA_PORT` | `11434` | Ollama server port | No | `.env` or CLI |
-| **Models** | `IDEA_GEN_MODEL_INNOVATOR` | `llama3.2:latest` | Model for summarization/grouping | No | `.env` or CLI |
+| **Models** | `IDEA_GEN_MODEL_INNOVATOR` | `llama3.2:latest` | Model for innovator persona (legacy) | No | `.env` or CLI |
 | | `IDEA_GEN_MODEL_CRITIC` | `llama3.2:latest` | Model for critic persona (unused) | No | `.env` or CLI |
+| | `IDEA_GEN_MODEL_GROUPING` | `llama3.2:latest` | Model for grouping agent (use custom modelfile) | No | `.env` or CLI |
+| | `IDEA_GEN_MODEL_SUMMARIZING` | `llama3.2:latest` | Model for summarizing agent (use custom modelfile) | No | `.env` or CLI |
 | **Directories** | `IDEA_GEN_OUTPUT_DIR` | `output` | Output directory for results | No | `.env` or CLI |
 | | `IDEA_GEN_DATA_DIR` | `data` | Data directory for ingested issues | No | `.env` or CLI |
 | | `IDEA_GEN_PERSONA_DIR` | `personas` | Persona metadata directory | No | `.env` or CLI |
@@ -1005,6 +1007,48 @@ chmod u+w .
 📚 **For more help, see [docs/USAGE.md#troubleshooting](docs/USAGE.md#troubleshooting)** - comprehensive troubleshooting guide with 10+ common issues and solutions.
 
 ## Advanced Configuration
+
+### Using Custom Modelfiles
+
+The project includes Ollama modelfiles with tuned parameters and embedded system prompts for the grouping and summarizing agents. These modelfiles provide better consistency and performance than the default models.
+
+#### Building Custom Modelfiles
+
+1. **Build the grouping model:**
+```bash
+ollama create idea-generator-grouping -f idea_generator/llm/modelfiles/grouping.Modelfile
+```
+
+2. **Build the summarizer model:**
+```bash
+ollama create idea-generator-summarizer -f idea_generator/llm/modelfiles/summarizer.Modelfile
+```
+
+3. **Configure your environment to use these models:**
+```bash
+# In your .env file
+IDEA_GEN_MODEL_GROUPING=idea-generator-grouping
+IDEA_GEN_MODEL_SUMMARIZING=idea-generator-summarizer
+```
+
+#### Modelfile Benefits
+
+- **Tuned Parameters**: Low temperature (0.2-0.3) for deterministic output
+- **Embedded System Prompts**: No need for separate prompt files
+- **Consistent Behavior**: Reduces LLM drift with explicit instructions
+- **Context Window**: Optimized context sizes for each agent type
+
+#### Updating Modelfiles
+
+If you update a modelfile, rebuild it to apply changes:
+
+```bash
+# Rebuild after editing the modelfile
+ollama create idea-generator-grouping -f idea_generator/llm/modelfiles/grouping.Modelfile
+
+# Verify the model is available
+ollama list | grep idea-generator
+```
 
 ### Using Different Models
 
