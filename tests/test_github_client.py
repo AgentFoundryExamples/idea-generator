@@ -275,7 +275,12 @@ class TestGitHubClient:
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = [
-            {"id": i, "number": i, "title": f"Issue {i}", "updated_at": f"2025-01-0{6-i}T00:00:00Z"}
+            {
+                "id": i,
+                "number": i,
+                "title": f"Issue {i}",
+                "updated_at": f"2025-01-{6-i:02d}T00:00:00Z",
+            }
             for i in range(1, 6)
         ]
         mock_request.return_value = mock_response
@@ -327,6 +332,30 @@ class TestGitHubClient:
             assert issues[0]["number"] == 3
             assert issues[1]["number"] == 2
             assert issues[2]["number"] == 1
+            client.close()
+
+    @patch("httpx.Client.request")
+    def test_fetch_issues_missing_timestamps(self, mock_request: MagicMock) -> None:
+        """Test that issues with missing timestamps are sorted to the end."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = [
+            {"id": 1, "number": 1},  # Missing updated_at
+            {"id": 2, "number": 2, "updated_at": "2025-01-05T00:00:00Z"},
+            {"id": 3, "number": 3},  # Missing updated_at
+            {"id": 4, "number": 4, "updated_at": "2025-01-03T00:00:00Z"},
+        ]
+        mock_request.return_value = mock_response
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            client = GitHubClient(cache_dir=Path(tmpdir))
+            issues = client.fetch_issues("owner", "repo")
+            # Issues with timestamps should come first (sorted by date desc)
+            assert issues[0]["id"] == 2  # 2025-01-05
+            assert issues[1]["id"] == 4  # 2025-01-03
+            # Issues without timestamps should come last (sorted by number desc)
+            assert issues[2]["number"] == 3
+            assert issues[3]["number"] == 1
             client.close()
 
     @patch("httpx.Client.request")
