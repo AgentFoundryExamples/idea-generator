@@ -87,6 +87,14 @@ class Config(BaseSettings):
         default="llama3.2:latest",
         description="Ollama model name for the critic persona",
     )
+    model_grouping: str = Field(
+        default="llama3.2:latest",
+        description="Ollama model name for the grouping agent (can use custom modelfile)",
+    )
+    model_summarizing: str = Field(
+        default="llama3.2:latest",
+        description="Ollama model name for the summarizing agent (can use custom modelfile)",
+    )
 
     # Processing configuration
     batch_size: int = Field(
@@ -262,6 +270,8 @@ def load_config(
     ollama_port: int | None = None,
     model_innovator: str | None = None,
     model_critic: str | None = None,
+    model_grouping: str | None = None,
+    model_summarizing: str | None = None,
     batch_size: int | None = None,
     max_workers: int | None = None,
     github_per_page: int | None = None,
@@ -291,6 +301,10 @@ def load_config(
         kwargs["model_innovator"] = model_innovator
     if model_critic is not None:
         kwargs["model_critic"] = model_critic
+    if model_grouping is not None:
+        kwargs["model_grouping"] = model_grouping
+    if model_summarizing is not None:
+        kwargs["model_summarizing"] = model_summarizing
     if batch_size is not None:
         kwargs["batch_size"] = batch_size
     if max_workers is not None:

@@ -78,6 +78,20 @@ ModelCriticOption = Annotated[
     str | None,
     typer.Option("--model-critic", help="Model for critic persona (default: llama3.2:latest)"),
 ]
+ModelGroupingOption = Annotated[
+    str | None,
+    typer.Option(
+        "--model-grouping",
+        help="Model for grouping agent (default: llama3.2:latest, can use custom modelfile)",
+    ),
+]
+ModelSummarizingOption = Annotated[
+    str | None,
+    typer.Option(
+        "--model-summarizing",
+        help="Model for summarizing agent (default: llama3.2:latest, can use custom modelfile)",
+    ),
+]
 OutputDirOption = Annotated[
     Path | None,
     typer.Option("--output-dir", "-o", help="Output directory (default: ./output)"),
@@ -309,7 +323,7 @@ def summarize(
     output_dir: OutputDirOption = None,
     ollama_host: OllamaHostOption = None,
     ollama_port: OllamaPortOption = None,
-    model_innovator: ModelInnovatorOption = None,
+    model_summarizing: ModelSummarizingOption = None,
     skip_cache: Annotated[
         bool,
         typer.Option("--skip-cache", help="Skip cache and regenerate all summaries"),
@@ -350,7 +364,7 @@ def summarize(
             output_dir=output_dir,
             ollama_host=ollama_host,
             ollama_port=ollama_port,
-            model_innovator=model_innovator,
+            model_summarizing=model_summarizing,
         )
 
         # Validate required configuration
@@ -376,7 +390,7 @@ def summarize(
         typer.echo(f"Summarizing issues from {config.github_repo}...")
         typer.echo(f"Data directory: {config.data_dir}")
         typer.echo(f"Output directory: {config.output_dir}")
-        typer.echo(f"Model: {config.model_innovator}")
+        typer.echo(f"Model: {config.model_summarizing}")
         typer.echo(f"Ollama endpoint: {config.ollama_base_url}\n")
 
         # Ensure directories exist
@@ -433,9 +447,23 @@ def summarize(
         cache_dir = config.output_dir / "summarization_cache"
 
         try:
+            # Validate model exists
+            if not llm_client.model_exists(config.model_summarizing):
+                available = llm_client.list_models()
+                typer.echo(
+                    f"Error: Summarization model '{config.model_summarizing}' not found on Ollama server.\n"
+                    f"Available models: {', '.join(available) or 'none'}\n\n"
+                    f"To build the custom modelfile:\n"
+                    f"  ollama create {config.model_summarizing} -f idea_generator/llm/modelfiles/summarizer.Modelfile\n\n"
+                    f"Or use a default model:\n"
+                    f"  export IDEA_GEN_MODEL_SUMMARIZING=llama3.2:latest",
+                    err=True,
+                )
+                raise typer.Exit(code=1)
+
             pipeline = SummarizationPipeline(
                 llm_client=llm_client,
-                model=config.model_innovator,
+                model=config.model_summarizing,
                 prompt_template_path=prompt_path,
                 max_tokens=config.summarization_max_tokens,
                 cache_dir=cache_dir,
@@ -529,7 +557,7 @@ def group(
     output_dir: OutputDirOption = None,
     ollama_host: OllamaHostOption = None,
     ollama_port: OllamaPortOption = None,
-    model_innovator: ModelInnovatorOption = None,
+    model_grouping: ModelGroupingOption = None,
     skip_noise: Annotated[
         bool,
         typer.Option("--skip-noise", help="Skip summaries already flagged as noise"),
@@ -571,7 +599,7 @@ def group(
             output_dir=output_dir,
             ollama_host=ollama_host,
             ollama_port=ollama_port,
-            model_innovator=model_innovator,
+            model_grouping=model_grouping,
         )
 
         # Apply CLI overrides for grouping config
@@ -602,7 +630,7 @@ def group(
 
         typer.echo(f"Grouping summaries from {config.github_repo}...")
         typer.echo(f"Output directory: {config.output_dir}")
-        typer.echo(f"Model: {config.model_innovator}")
+        typer.echo(f"Model: {config.model_grouping}")
         typer.echo(f"Ollama endpoint: {config.ollama_base_url}")
         typer.echo(
             f"Batch limits: size={config.grouping_max_batch_size}, "
@@ -662,9 +690,23 @@ def group(
         prompt_path = Path(__file__).parent / "llm" / "prompts" / "grouper.txt"
 
         try:
+            # Validate model exists
+            if not llm_client.model_exists(config.model_grouping):
+                available = llm_client.list_models()
+                typer.echo(
+                    f"Error: Grouping model '{config.model_grouping}' not found on Ollama server.\n"
+                    f"Available models: {', '.join(available) or 'none'}\n\n"
+                    f"To build the custom modelfile:\n"
+                    f"  ollama create {config.model_grouping} -f idea_generator/llm/modelfiles/grouping.Modelfile\n\n"
+                    f"Or use a default model:\n"
+                    f"  export IDEA_GEN_MODEL_GROUPING=llama3.2:latest",
+                    err=True,
+                )
+                raise typer.Exit(code=1)
+
             pipeline = GroupingPipeline(
                 llm_client=llm_client,
-                model=config.model_innovator,
+                model=config.model_grouping,
                 prompt_template_path=prompt_path,
                 max_batch_size=config.grouping_max_batch_size,
                 max_batch_chars=config.grouping_max_batch_chars,

@@ -1465,6 +1465,104 @@ If you encounter issues not covered here:
 
 ## Advanced Topics
 
+### Using Custom Modelfiles
+
+The idea-generator includes Ollama Modelfiles that bundle system prompts with tuned generation parameters. These modelfiles provide more consistent and deterministic behavior than using base models with separate prompts.
+
+#### Building Custom Modelfiles
+
+The project includes two specialized modelfiles:
+- `summarizer.Modelfile`: For analyzing and summarizing GitHub issues
+- `grouping.Modelfile`: For clustering similar issues into idea groups
+
+**Build the models:**
+```bash
+# From the project root directory
+ollama create idea-generator-summarizer -f idea_generator/llm/modelfiles/summarizer.Modelfile
+ollama create idea-generator-grouping -f idea_generator/llm/modelfiles/grouping.Modelfile
+
+# Verify they're available
+ollama list | grep idea-generator
+```
+
+**Configure to use them:**
+```bash
+# In your .env file
+IDEA_GEN_MODEL_SUMMARIZING=idea-generator-summarizer
+IDEA_GEN_MODEL_GROUPING=idea-generator-grouping
+```
+
+Or via CLI:
+```bash
+idea-generator run \
+  --github-repo owner/repo \
+  --model-summarizing idea-generator-summarizer \
+  --model-grouping idea-generator-grouping
+```
+
+#### Modelfile Benefits
+
+1. **Consistency**: System prompts and parameters are locked in, preventing drift
+2. **Performance**: Tuned parameters (low temperature, restricted sampling) improve output quality
+3. **Portability**: Models can be shared and versioned as single units
+4. **Simplicity**: No need to manage separate prompt files at runtime
+
+#### Tuned Parameters
+
+**Summarizer Model:**
+- `temperature: 0.3` - Low temperature for focused, deterministic summaries
+- `top_k: 20` - Conservative token sampling
+- `num_ctx: 4096` - Context window optimized for issue text
+
+**Grouping Model:**
+- `temperature: 0.2` - Very low temperature for deterministic clustering
+- `top_k: 10` - Strict token sampling for structured output
+- `num_ctx: 8192` - Larger context for batch processing
+
+#### Customizing Modelfiles
+
+To use a different base model or adjust parameters:
+
+```bash
+# Edit the modelfile
+nano idea_generator/llm/modelfiles/summarizer.Modelfile
+
+# Change the base model
+FROM llama3.2:8b  # Use 8B model instead of 3B
+
+# Adjust parameters
+PARAMETER temperature 0.4  # Slightly higher temperature
+
+# Rebuild
+ollama create idea-generator-summarizer -f idea_generator/llm/modelfiles/summarizer.Modelfile
+```
+
+#### Updating Models
+
+When you update a modelfile, you must rebuild the model:
+
+```bash
+# Edit the modelfile
+nano idea_generator/llm/modelfiles/grouping.Modelfile
+
+# Rebuild (overwrites existing)
+ollama create idea-generator-grouping -f idea_generator/llm/modelfiles/grouping.Modelfile
+
+# Verify changes
+ollama show idea-generator-grouping
+```
+
+**Important**: Stale models will continue to use old prompts/parameters until rebuilt.
+
+#### Fallback Behavior
+
+The CLI gracefully handles missing models:
+- If custom model names are configured but don't exist: Error with instructions to build them
+- If no custom models configured: Uses `llama3.2:latest` with separate prompt files
+- If Ollama is unreachable: Clear error with troubleshooting steps
+
+See `idea_generator/llm/modelfiles/README.md` for detailed documentation.
+
 ### Customizing Ranking Weights
 
 The default ranking weights may not fit all use cases. Customize them based on your priorities:

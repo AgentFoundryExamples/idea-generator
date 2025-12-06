@@ -47,6 +47,8 @@ class TestConfig:
         assert config.ollama_port == 11434
         assert config.model_innovator == "llama3.2:latest"
         assert config.model_critic == "llama3.2:latest"
+        assert config.model_grouping == "llama3.2:latest"
+        assert config.model_summarizing == "llama3.2:latest"
         assert config.batch_size == 10
         assert config.max_workers == 4
         assert config.github_per_page == 100
@@ -131,6 +133,8 @@ class TestConfig:
         monkeypatch.setenv("IDEA_GEN_OLLAMA_HOST", "http://testhost")
         monkeypatch.setenv("IDEA_GEN_OLLAMA_PORT", "9999")
         monkeypatch.setenv("IDEA_GEN_MODEL_INNOVATOR", "test-model-1")
+        monkeypatch.setenv("IDEA_GEN_MODEL_GROUPING", "test-grouping-model")
+        monkeypatch.setenv("IDEA_GEN_MODEL_SUMMARIZING", "test-summarizing-model")
         monkeypatch.setenv("IDEA_GEN_BATCH_SIZE", "25")
 
         config = Config()
@@ -138,6 +142,8 @@ class TestConfig:
         assert config.ollama_host == "http://testhost"
         assert config.ollama_port == 9999
         assert config.model_innovator == "test-model-1"
+        assert config.model_grouping == "test-grouping-model"
+        assert config.model_summarizing == "test-summarizing-model"
         assert config.batch_size == 25
 
     def test_load_config_with_overrides(self) -> None:
@@ -146,10 +152,14 @@ class TestConfig:
             github_repo="override/repo",
             ollama_port=7777,
             batch_size=15,
+            model_grouping="custom-grouping",
+            model_summarizing="custom-summarizer",
         )
         assert config.github_repo == "override/repo"
         assert config.ollama_port == 7777
         assert config.batch_size == 15
+        assert config.model_grouping == "custom-grouping"
+        assert config.model_summarizing == "custom-summarizer"
 
     def test_load_config_none_values_ignored(self) -> None:
         """Test that None values in load_config don't override defaults."""

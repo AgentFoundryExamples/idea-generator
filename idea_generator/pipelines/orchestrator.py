@@ -298,9 +298,19 @@ class Orchestrator:
                         f"Ollama server not reachable at {self.config.ollama_base_url}"
                     )
 
+                # Validate that the summarization model exists
+                model_name = self.config.model_summarizing
+                if not llm_client.model_exists(model_name):
+                    raise OrchestratorError(
+                        f"Summarization model '{model_name}' not found on Ollama server. "
+                        f"Available models: {', '.join(llm_client.list_models()) or 'none'}. "
+                        f"Build the model with: "
+                        f"ollama create {model_name} -f idea_generator/llm/modelfiles/summarizer.Modelfile"
+                    )
+
                 pipeline = SummarizationPipeline(
                     llm_client=llm_client,
-                    model=self.config.model_innovator,
+                    model=model_name,
                     prompt_template_path=prompt_path,
                     max_tokens=self.config.summarization_max_tokens,
                     cache_dir=cache_dir,
@@ -363,9 +373,19 @@ class Orchestrator:
                         f"Ollama server not reachable at {self.config.ollama_base_url}"
                     )
 
+                # Validate that the grouping model exists
+                model_name = self.config.model_grouping
+                if not llm_client.model_exists(model_name):
+                    raise OrchestratorError(
+                        f"Grouping model '{model_name}' not found on Ollama server. "
+                        f"Available models: {', '.join(llm_client.list_models()) or 'none'}. "
+                        f"Build the model with: "
+                        f"ollama create {model_name} -f idea_generator/llm/modelfiles/grouping.Modelfile"
+                    )
+
                 pipeline = GroupingPipeline(
                     llm_client=llm_client,
-                    model=self.config.model_innovator,
+                    model=model_name,
                     prompt_template_path=prompt_path,
                     max_batch_size=self.config.grouping_max_batch_size,
                     max_batch_chars=self.config.grouping_max_batch_chars,
