@@ -314,7 +314,12 @@ class TestGitHubClient:
 
     @patch("httpx.Client.request")
     def test_fetch_issues_tiebreaker_on_same_timestamp(self, mock_request: MagicMock) -> None:
-        """Test deterministic tiebreaker when timestamps are identical."""
+        """Test deterministic tiebreaker when timestamps are identical.
+
+        When updated_at timestamps are the same, issues are sorted by number descending.
+        This maintains "most recent first" ordering because GitHub issue numbers are
+        sequential (higher number = newer issue created).
+        """
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = [
@@ -327,16 +332,20 @@ class TestGitHubClient:
         with tempfile.TemporaryDirectory() as tmpdir:
             client = GitHubClient(cache_dir=Path(tmpdir))
             issues = client.fetch_issues("owner", "repo")
-            # With same timestamp, should be sorted by issue number descending (most recent first)
-            # Since the sort is (updated_at, number) with reverse=True
-            assert issues[0]["number"] == 3
+            # With same timestamp, higher issue numbers (newer) come first
+            assert issues[0]["number"] == 3  # Newest issue
             assert issues[1]["number"] == 2
-            assert issues[2]["number"] == 1
+            assert issues[2]["number"] == 1  # Oldest issue
             client.close()
 
     @patch("httpx.Client.request")
     def test_fetch_issues_missing_timestamps(self, mock_request: MagicMock) -> None:
-        """Test that issues with missing timestamps are sorted to the end."""
+        """Test that issues with missing timestamps are sorted to the end.
+
+        Issues with valid timestamps are sorted by updated_at descending.
+        Issues without timestamps use epoch date and are sorted to the end,
+        with higher issue numbers (newer) first among the timestampless issues.
+        """
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = [
@@ -350,12 +359,12 @@ class TestGitHubClient:
         with tempfile.TemporaryDirectory() as tmpdir:
             client = GitHubClient(cache_dir=Path(tmpdir))
             issues = client.fetch_issues("owner", "repo")
-            # Issues with timestamps should come first (sorted by date desc)
-            assert issues[0]["id"] == 2  # 2025-01-05
+            # Issues with timestamps come first (sorted by date desc)
+            assert issues[0]["id"] == 2  # 2025-01-05 (most recent)
             assert issues[1]["id"] == 4  # 2025-01-03
-            # Issues without timestamps should come last (sorted by number desc)
-            assert issues[2]["number"] == 3
-            assert issues[3]["number"] == 1
+            # Issues without timestamps come last (sorted by number desc = newer first)
+            assert issues[2]["number"] == 3  # Higher number = newer
+            assert issues[3]["number"] == 1  # Lower number = older
             client.close()
 
     @patch("httpx.Client.request")

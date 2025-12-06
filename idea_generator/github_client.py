@@ -267,9 +267,12 @@ class GitHubClient:
         # Filter out pull requests (they appear in the issues endpoint)
         filtered_issues = [issue for issue in issues if "pull_request" not in issue]
 
-        # Apply deterministic tiebreaker for identical timestamps: sort by issue number ascending
-        # This ensures consistent ordering when timestamps are the same
-        # Use early epoch date for missing timestamps to sort them to the end
+        # Apply deterministic tiebreaker for identical timestamps
+        # Sort by (updated_at, issue_number) both descending
+        # - updated_at: Most recently updated issues first
+        # - issue_number: When timestamps match, higher numbers (newer issues) first
+        # - Missing timestamps use epoch date to sort to end
+        # Note: GitHub issue numbers increment sequentially, so higher numbers = newer issues
         filtered_issues.sort(
             key=lambda x: (
                 x.get("updated_at", "1970-01-01T00:00:00Z"),
