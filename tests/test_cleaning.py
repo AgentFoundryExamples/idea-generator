@@ -243,7 +243,8 @@ class TestIsNoiseIssue:
             title="Issue", body="Body", labels=["spam"], author="user", comment_count=0
         )
         assert is_noise is True
-        assert "spam" in reason.lower() or "non-actionable" in reason.lower()
+        assert reason is not None
+        assert "non-actionable" in reason.lower() or "spam" in reason.lower()
 
     def test_invalid_label(self) -> None:
         """Test issue with invalid label."""
@@ -431,7 +432,7 @@ class TestIsLowSignalIssue:
         assert reason is None
 
     def test_detects_noise(self) -> None:
-        """Test that noise is detected."""
+        """Test that noise is detected (single-word title)."""
         is_low, reason = is_low_signal_issue(
             title="test",
             body="testing",
@@ -441,8 +442,9 @@ class TestIsLowSignalIssue:
             enable_support_filter=True,
         )
         assert is_low is True
-        # Could be spam pattern or single-word title
-        assert "spam" in reason.lower() or "single" in reason.lower()
+        assert reason is not None
+        # Single-word title is the expected trigger
+        assert "single" in reason.lower() or "word" in reason.lower()
 
     def test_detects_support_when_enabled(self) -> None:
         """Test that support tickets are detected when enabled."""
@@ -455,7 +457,9 @@ class TestIsLowSignalIssue:
             enable_support_filter=True,
         )
         assert is_low is True
-        assert "keyword" in reason.lower() or "support" in reason.lower()
+        assert reason is not None
+        # Should be flagged due to "how do I" keyword
+        assert "keyword" in reason.lower() or "pattern" in reason.lower()
 
     def test_ignores_support_when_disabled(self) -> None:
         """Test that support tickets are ignored when disabled."""

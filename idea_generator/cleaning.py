@@ -55,10 +55,14 @@ SUPPORT_KEYWORDS = [
 ]
 
 # Labels that typically indicate support/questions/low-signal issues
+# NOTE: "help wanted" is included here as it often indicates requests for assistance
+# rather than actionable feature requests. However, some projects use "help wanted"
+# to mark good issues for community contribution. If your project uses this pattern,
+# disable support filtering via IDEA_GEN_SUPPORT_FILTER_ENABLED=false
 LOW_SIGNAL_LABELS = {
     "support",
     "question",
-    "help wanted",  # Note: This is different from "good first issue"
+    "help wanted",
     "needs help",
     "how-to",
     "usage",

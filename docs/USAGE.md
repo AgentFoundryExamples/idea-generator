@@ -657,6 +657,7 @@ IDEA_GEN_SUPPORT_FILTER_ENABLED=true       # Enable support ticket filtering
 
 ```bash
 # Disable support ticket filtering if your project uses "question" for valid issues
+# or "help wanted" to mark good issues for community contribution
 IDEA_GEN_SUPPORT_FILTER_ENABLED=false
 
 # Disable all filtering (not recommended)
@@ -668,6 +669,10 @@ IDEA_GEN_SUPPORT_FILTER_ENABLED=false
 
 - **Over-filtering**: Legitimate feature requests phrased as questions may be flagged
   - Example: "How can we improve authentication?" might be flagged
+  
+- **"help wanted" label**: This label is included in support filtering as it often indicates
+  requests for assistance. However, many projects use "help wanted" to mark valuable issues
+  that need community contribution. If your project follows this pattern, disable support filtering.
   - Mitigation: Disable support filtering or review flagged issues manually
   
 - **Label repurposing**: Projects that use "question" for valid work items should disable support filtering
