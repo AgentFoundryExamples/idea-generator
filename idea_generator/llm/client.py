@@ -22,10 +22,13 @@ This module provides a wrapper around the Ollama API with support for:
 """
 
 import json
+import logging
 import time
 from typing import Any
 
 import httpx
+
+logger = logging.getLogger(__name__)
 
 
 class OllamaError(Exception):
@@ -267,7 +270,7 @@ class OllamaClient:
             raise OllamaError(f"Failed to list models: HTTP {e.response.status_code}") from e
         except httpx.RequestError as e:
             raise OllamaError(f"Failed to connect to Ollama server: {e}") from e
-        except (KeyError, TypeError) as e:
+        except (KeyError, TypeError, json.JSONDecodeError) as e:
             raise OllamaError(f"Invalid response from Ollama server: {e}") from e
 
     def model_exists(self, model_name: str) -> bool:
@@ -279,9 +282,17 @@ class OllamaClient:
 
         Returns:
             True if the model exists, False otherwise
+            
+        Note:
+            Returns False on any error (network issues, server errors, etc.).
+            Errors are logged for debugging but not raised to allow graceful fallback.
         """
         try:
             models = self.list_models()
             return model_name in models
-        except OllamaError:
+        except OllamaError as e:
+            logger.warning(
+                f"Unable to check if model '{model_name}' exists: {e}. "
+                "Returning False to allow fallback behavior."
+            )
             return False
