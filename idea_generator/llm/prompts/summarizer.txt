@@ -15,12 +15,14 @@ You will receive a cleaned GitHub issue with:
 - Metadata: Labels, reactions, creation date
 
 # Output Format
-Respond with ONLY valid JSON in this exact schema:
+Respond with ONLY valid JSON in this exact schema. All fields are REQUIRED.
+
+**Required JSON Schema:**
 ```json
 {
-  "title": "Condensed title (max 100 chars)",
-  "summary": "2-3 sentence summary of the issue and key discussion points",
-  "topic_area": "Primary topic (e.g., performance, security, UI/UX, documentation, bug, feature)",
+  "title": "string (max 100 characters)",
+  "summary": "string (2-3 sentences, no newlines)",
+  "topic_area": "string",
   "novelty": 0.0,
   "feasibility": 0.0,
   "desirability": 0.0,
@@ -28,6 +30,22 @@ Respond with ONLY valid JSON in this exact schema:
   "noise_flag": false
 }
 ```
+
+**Field Requirements:**
+- `title` (string): Condensed title, max 100 characters
+- `summary` (string): 2-3 sentences describing the issue. Replace newlines with spaces.
+- `topic_area` (string): One of: performance, security, UI/UX, API, documentation, bug, feature, enhancement, maintenance, testing, refactoring, accessibility
+- `novelty` (number): Float between 0.0 and 1.0
+- `feasibility` (number): Float between 0.0 and 1.0
+- `desirability` (number): Float between 0.0 and 1.0
+- `attention` (number): Float between 0.0 and 1.0
+- `noise_flag` (boolean): true or false only
+
+**Important:**
+- Do NOT add extra fields beyond these 8 required fields
+- Do NOT use null for any field
+- Replace all newlines in text with single spaces
+- If uncertain about metrics, refuse to respond rather than guessing
 
 # Metric Definitions
 
@@ -64,19 +82,25 @@ Is this issue likely spam, low-quality, or off-topic?
 
 # Important Guidelines
 
-1. **Brevity**: Keep the summary under 200 words. Focus on WHAT is requested and WHY.
+1. **Brevity**: Keep summary under 200 words. Focus on WHAT and WHY.
 
 2. **Objectivity**: Base metrics on observable data (reactions, comments, labels), not speculation.
 
-3. **Context Awareness**: If text is truncated, note this in your summary ("Discussion continues beyond truncation...").
+3. **Context Awareness**: If text is truncated, note in summary ("Discussion continues beyond truncation...").
 
-4. **Consistency**: Use the full 0.0-1.0 scale. Avoid clustering around 0.5.
+4. **Consistency**: Use full 0.0-1.0 scale. Avoid clustering around 0.5.
 
 5. **Topic Classification**: Choose the most specific applicable topic:
    - performance, security, accessibility, UI/UX, API, documentation
    - bug, feature, enhancement, maintenance, testing, refactoring
 
 6. **JSON Only**: Output MUST be valid JSON. Do not include explanations, markdown, or extra text.
+
+7. **No Hallucination**: Only use the 8 required fields. Never add custom fields.
+
+8. **Text Normalization**: Replace newlines, tabs, and multiple spaces with single spaces in all text fields.
+
+9. **Refuse When Uncertain**: If you cannot confidently assess metrics or the issue is too vague, set noise_flag to true and provide minimal summary.
 
 # Example Input
 ```
@@ -90,7 +114,8 @@ Reactions: +1: 15, heart: 3
 Labels: enhancement, UI
 ```
 
-# Example Output
+# Example Success Response
+This is the ONLY valid format. Match it exactly:
 ```json
 {
   "title": "Add dark mode support",
@@ -103,6 +128,8 @@ Labels: enhancement, UI
   "noise_flag": false
 }
 ```
+
+Note: All 8 fields present, no extras, no nulls, no newlines in strings, metrics in range 0.0-1.0.
 
 # Edge Cases
 

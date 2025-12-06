@@ -145,6 +145,7 @@ sequenceDiagram
 - **Well-Tested**: 225+ unit tests with 70%+ coverage
 - **Type-Safe**: Full type hints with MyPy validation
 - **Extensible**: Modular architecture, easy to customize personas and prompts
+- **Schema-Enforced**: Strict Pydantic validation and explicit prompt reminders prevent LLM drift
 
 ## What's New
 
@@ -158,18 +159,22 @@ This is the first public release of idea-generator! Key features include:
 - Intelligent clustering and deduplication
 - Weighted ranking system with customizable priorities
 - JSON and Markdown report generation
+- **Schema-enforced prompts** for reliable output from smaller LLMs
 
 🔧 **Technical Features**
 - Full Ollama integration with multiple model support
 - GitHub API client with pagination and rate limit handling
 - Smart caching for offline re-use
 - Noise/spam filtering
+- **Strict Pydantic validation** preventing malformed LLM output
+- **Explicit schema reminders** in all prompts to reduce drift
 - 225+ unit tests
 
 📚 **Documentation**
 - Comprehensive README with quick start
 - Detailed usage guide in [docs/USAGE.md](docs/USAGE.md)
 - Complete environment variable reference
+- **Schema Contract documentation** explaining data models and prompt design
 - Troubleshooting guide and advanced topics
 - CI/CD integration examples
 
@@ -1136,6 +1141,7 @@ idea-generator/
 - [Quick Start](#quick-start) - 5-minute setup
 - [Installation](docs/USAGE.md#installation) - Detailed setup steps
 - [Configuration](docs/USAGE.md#configuration) - Environment variables
+- [Schema Contract](docs/USAGE.md#schema-contract) - Data models and prompt design
 
 **Using the Tool**
 - [Usage Workflow](docs/USAGE.md#usage-workflow) - Stage-by-stage guide

@@ -16,6 +16,7 @@ Tests for the grouping pipeline.
 """
 
 import json
+from importlib.resources import files
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import Mock
@@ -136,6 +137,29 @@ class TestGroupingPipelineInit:
                 model="llama3.2:latest",
                 prompt_template_path=Path("/nonexistent/grouper.txt"),
             )
+
+    def test_prompt_contains_schema_reminders(self, mock_llm_client: Mock) -> None:
+        """Test that prompt template contains explicit schema field requirements."""
+        try:
+            prompt_path = files("idea_generator.llm.prompts").joinpath("grouper.txt")
+            prompt_text = prompt_path.read_text()
+        except (ModuleNotFoundError, FileNotFoundError):
+            pytest.skip("Prompt template not found in expected location")
+        
+        # Verify schema reminders are present
+        assert "Required JSON Schema" in prompt_text, "Prompt should contain explicit schema section"
+        assert "clusters" in prompt_text, "Prompt should specify clusters field"
+        assert "cluster_id" in prompt_text, "Prompt should specify cluster_id field"
+        assert "representative_title" in prompt_text, "Prompt should specify representative_title field"
+        assert "member_issue_ids" in prompt_text, "Prompt should specify member_issue_ids field"
+        assert "novelty" in prompt_text, "Prompt should specify novelty field"
+        assert "feasibility" in prompt_text, "Prompt should specify feasibility field"
+        assert "desirability" in prompt_text, "Prompt should specify desirability field"
+        assert "attention" in prompt_text, "Prompt should specify attention field"
+        assert "0.0" in prompt_text and "1.0" in prompt_text, "Prompt should specify metric ranges"
+        # Check for warning against extra fields using flexible assertion
+        assert ("extra" in prompt_text.lower() and "field" in prompt_text.lower()), "Prompt should warn against extra fields"
+        assert "newline" in prompt_text.lower(), "Prompt should mention newline handling"
 
 
 class TestCreateBatches:
