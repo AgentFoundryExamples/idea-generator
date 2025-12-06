@@ -248,6 +248,7 @@ class Orchestrator:
                         comments,
                         max_text_length=self.config.max_text_length,
                         noise_filter_enabled=self.config.noise_filter_enabled,
+                        support_filter_enabled=self.config.support_filter_enabled,
                     )
                     normalized_issues.append(normalized)
 

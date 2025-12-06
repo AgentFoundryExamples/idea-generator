@@ -34,7 +34,9 @@ import pytest
 from idea_generator.cleaning import (
     clean_markdown,
     deduplicate_comments,
+    is_low_signal_issue,
     is_noise_issue,
+    is_support_ticket,
     normalize_github_issue,
     truncate_text,
 )
@@ -241,7 +243,8 @@ class TestIsNoiseIssue:
             title="Issue", body="Body", labels=["spam"], author="user", comment_count=0
         )
         assert is_noise is True
-        assert "spam" in reason.lower()
+        assert reason is not None
+        assert "non-actionable" in reason.lower() or "spam" in reason.lower()
 
     def test_invalid_label(self) -> None:
         """Test issue with invalid label."""
@@ -285,6 +288,267 @@ class TestIsNoiseIssue:
             title="test", body="Some body", labels=[], author="user", comment_count=0
         )
         assert is_noise is True
+
+
+class TestIsSupportTicket:
+    """Test suite for is_support_ticket function."""
+
+    def test_not_support_ticket(self) -> None:
+        """Test valid feature request."""
+        is_support, reason = is_support_ticket(
+            title="Add new authentication method",
+            body="We should implement OAuth2 authentication for better security.",
+            labels=["enhancement"],
+        )
+        assert is_support is False
+        assert reason is None
+
+    def test_support_label(self) -> None:
+        """Test issue with support label."""
+        is_support, reason = is_support_ticket(
+            title="Need help with configuration",
+            body="I need assistance setting this up.",
+            labels=["support"],
+        )
+        assert is_support is True
+        assert "support" in reason.lower()
+
+    def test_question_label(self) -> None:
+        """Test issue with question label."""
+        is_support, reason = is_support_ticket(
+            title="How to use feature X?",
+            body="I'm trying to use feature X.",
+            labels=["question"],
+        )
+        assert is_support is True
+        assert "question" in reason.lower()
+
+    def test_how_do_i_keyword(self) -> None:
+        """Test issue with 'how do I' keyword."""
+        is_support, reason = is_support_ticket(
+            title="How do I configure the database connection?",
+            body="I'm having trouble with configuration.",
+            labels=[],
+        )
+        assert is_support is True
+        assert "support ticket indicator" in reason.lower() or "question keyword" in reason.lower()
+
+    def test_how_can_i_keyword(self) -> None:
+        """Test issue with 'how can I' keyword."""
+        is_support, reason = is_support_ticket(
+            title="How can I enable dark mode?",
+            body="Looking for documentation on this.",
+            labels=[],
+        )
+        assert is_support is True
+
+    def test_how_to_keyword(self) -> None:
+        """Test issue with 'how to' keyword."""
+        is_support, reason = is_support_ticket(
+            title="How to deploy this application?",
+            body="Need deployment instructions.",
+            labels=[],
+        )
+        assert is_support is True
+
+    def test_need_help_keyword(self) -> None:
+        """Test issue with 'need help' keyword."""
+        is_support, reason = is_support_ticket(
+            title="I need help understanding the API",
+            body="The documentation is unclear.",
+            labels=[],
+        )
+        assert is_support is True
+
+    def test_can_someone_help_keyword(self) -> None:
+        """Test issue with 'can someone help' keyword."""
+        is_support, reason = is_support_ticket(
+            title="Can someone help me with this error?",
+            body="I'm getting an error when starting the app.",
+            labels=[],
+        )
+        assert is_support is True
+
+    def test_what_is_keyword(self) -> None:
+        """Test issue with 'what is the' keyword."""
+        is_support, reason = is_support_ticket(
+            title="What is the recommended way to handle errors?",
+            body="Looking for best practices.",
+            labels=[],
+        )
+        assert is_support is True
+
+    def test_why_is_keyword(self) -> None:
+        """Test issue with 'why is' keyword."""
+        is_support, reason = is_support_ticket(
+            title="Why is my application crashing?",
+            body="It keeps crashing on startup.",
+            labels=[],
+        )
+        assert is_support is True
+
+    def test_case_insensitive_matching(self) -> None:
+        """Test that keyword matching is case insensitive."""
+        is_support, reason = is_support_ticket(
+            title="HOW DO I configure this?",
+            body="NEED HELP with setup.",
+            labels=[],
+        )
+        assert is_support is True
+
+    def test_keyword_in_body(self) -> None:
+        """Test keyword detection in body text."""
+        is_support, reason = is_support_ticket(
+            title="Configuration issue",
+            body="I cannot figure out how to configure the settings. Can someone help me?",
+            labels=[],
+        )
+        assert is_support is True
+
+    def test_false_positive_avoidance(self) -> None:
+        """Test that feature requests aren't falsely flagged."""
+        is_support, reason = is_support_ticket(
+            title="Add ability to export data",
+            body="Users should be able to export their data in CSV format.",
+            labels=["enhancement"],
+        )
+        assert is_support is False
+
+
+class TestIsLowSignalIssue:
+    """Test suite for is_low_signal_issue function."""
+
+    def test_not_low_signal(self) -> None:
+        """Test valid issue."""
+        is_low, reason = is_low_signal_issue(
+            title="Fix memory leak in data processor",
+            body="The data processor leaks memory when processing large files.",
+            labels=["bug"],
+            author="user",
+            comment_count=5,
+            enable_support_filter=True,
+        )
+        assert is_low is False
+        assert reason is None
+
+    def test_detects_noise(self) -> None:
+        """Test that noise is detected (single-word title takes precedence)."""
+        is_low, reason = is_low_signal_issue(
+            title="test",
+            body="testing",
+            labels=[],
+            author="user",
+            comment_count=0,
+            enable_support_filter=True,
+        )
+        assert is_low is True
+        assert reason is not None
+        # "test" is single word, which is checked before spam patterns
+        assert "single" in reason.lower() and "word" in reason.lower()
+
+    def test_detects_spam_pattern(self) -> None:
+        """Test that spam patterns in multi-word titles are detected."""
+        is_low, reason = is_low_signal_issue(
+            title="test this",
+            body="Some body text to avoid empty body detection",
+            labels=[],
+            author="user",
+            comment_count=0,
+            enable_support_filter=True,
+        )
+        assert is_low is False  # "test this" is not a spam pattern (needs to be "test" alone)
+
+        # But "testing" as a standalone title should match
+        is_low2, reason2 = is_low_signal_issue(
+            title="testing",
+            body="Some body text",
+            labels=[],
+            author="user",
+            comment_count=0,
+            enable_support_filter=True,
+        )
+        # "testing" is also a single word, so it will be caught by single-word check
+        assert is_low2 is True
+
+    def test_detects_single_word_title(self) -> None:
+        """Test that single-word titles are detected as noise."""
+        is_low, reason = is_low_signal_issue(
+            title="Bug",
+            body="This is a valid bug report with sufficient detail",
+            labels=[],
+            author="user",
+            comment_count=0,
+            enable_support_filter=True,
+        )
+        assert is_low is True
+        assert reason is not None
+        # Single-word title should be the trigger
+        assert "single" in reason.lower() and "word" in reason.lower()
+
+    def test_detects_support_when_enabled(self) -> None:
+        """Test that support tickets are detected when enabled."""
+        is_low, reason = is_low_signal_issue(
+            title="How do I install this package?",
+            body="I'm having trouble installing.",
+            labels=[],
+            author="user",
+            comment_count=0,
+            enable_support_filter=True,
+        )
+        assert is_low is True
+        assert reason is not None
+        # Should be flagged due to "how do I" keyword
+        assert "support ticket indicator" in reason.lower() or "question keyword" in reason.lower()
+
+    def test_ignores_support_when_disabled(self) -> None:
+        """Test that support tickets are ignored when disabled."""
+        is_low, reason = is_low_signal_issue(
+            title="How do I install this package?",
+            body="I'm having trouble installing.",
+            labels=[],
+            author="user",
+            comment_count=0,
+            enable_support_filter=False,
+        )
+        assert is_low is False
+        assert reason is None
+
+    def test_detects_bot_author(self) -> None:
+        """Test that bot authors are detected."""
+        is_low, reason = is_low_signal_issue(
+            title="Update dependency",
+            body="Updates package version.",
+            labels=[],
+            author="dependabot[bot]",
+            comment_count=0,
+            enable_support_filter=True,
+        )
+        assert is_low is True
+        assert "bot" in reason.lower()
+
+    def test_detects_spam_label(self) -> None:
+        """Test that spam labels are detected."""
+        is_low, reason = is_low_signal_issue(
+            title="Great project!",
+            body="This is amazing!",
+            labels=["spam"],
+            author="user",
+            comment_count=0,
+            enable_support_filter=True,
+        )
+        assert is_low is True
+
+    def test_detects_support_label(self) -> None:
+        """Test that support labels are detected."""
+        is_low, reason = is_low_signal_issue(
+            title="Help with configuration",
+            body="I need help configuring the app.",
+            labels=["support"],
+            author="user",
+            comment_count=0,
+            enable_support_filter=True,
+        )
+        assert is_low is True
 
 
 class TestNormalizeGitHubIssue:

@@ -42,6 +42,53 @@ SPAM_PATTERNS = [
     r"^hey\s*$",
 ]
 
+# Support ticket / question patterns (pre-compiled for performance)
+# Map compiled patterns to user-friendly descriptions
+SUPPORT_KEYWORD_PATTERNS = {
+    re.compile(
+        r"\bhow\s+(?:do\s+i|can\s+i|to)\b", re.IGNORECASE
+    ): "question keyword (how do I/can I/to)",
+    re.compile(r"\bwhat\s+(?:is|are)\s+the\b", re.IGNORECASE): "question keyword (what is/are the)",
+    re.compile(
+        r"\bwhere\s+(?:do\s+i|can\s+i)\b", re.IGNORECASE
+    ): "question keyword (where do I/can I)",
+    re.compile(
+        r"\bwhy\s+(?:is|are|does|doesn't)\b", re.IGNORECASE
+    ): "question keyword (why is/does)",
+    re.compile(r"\bhelp\s+(?:me|with|needed)\b", re.IGNORECASE): "help request keyword",
+    re.compile(
+        r"\bcannot\s+(?:figure\s+out|understand|get)\b", re.IGNORECASE
+    ): "confusion indicator",
+    re.compile(r"\bcan\s+someone\s+(?:help|explain|show)\b", re.IGNORECASE): "help request",
+    re.compile(r"\bneed\s+help\b", re.IGNORECASE): "help request keyword",
+}
+
+# Labels that typically indicate support/questions/low-signal issues
+# NOTE: "help wanted" is included here as it often indicates requests for assistance
+# rather than actionable feature requests. However, some projects use "help wanted"
+# to mark good issues for community contribution. If your project uses this pattern,
+# disable support filtering via IDEA_GEN_SUPPORT_FILTER_ENABLED=false
+LOW_SIGNAL_LABELS = {
+    "support",
+    "question",
+    "help wanted",
+    "needs help",
+    "how-to",
+    "usage",
+    "discussion",
+}
+
+# Labels that indicate the issue is not actionable
+NON_ACTIONABLE_LABELS = {
+    "spam",
+    "invalid",
+    "wontfix",
+    "duplicate",
+    "off-topic",
+    "declined",
+    "stale",
+}
+
 
 def clean_markdown(text: str) -> str:
     """
@@ -211,7 +258,10 @@ def is_noise_issue(
     comment_count: int,
 ) -> tuple[bool, str | None]:
     """
-    Determine if an issue is likely noise/spam.
+    Determine if an issue is likely noise/spam (legacy function).
+
+    This function checks for basic spam patterns. For more comprehensive filtering
+    including support tickets and questions, use is_low_signal_issue().
 
     Args:
         title: Issue title
@@ -223,11 +273,10 @@ def is_noise_issue(
     Returns:
         Tuple of (is_noise, reason)
     """
-    # Check for spam labels
-    spam_labels = {"spam", "invalid", "wontfix", "duplicate"}
-    if any(label.lower() in spam_labels for label in labels):
-        spam_label_list = [label for label in labels if label.lower() in spam_labels]
-        return True, f"Spam label detected: {spam_label_list}"
+    # Check for non-actionable labels
+    if any(label.lower() in NON_ACTIONABLE_LABELS for label in labels):
+        matched_labels = [label for label in labels if label.lower() in NON_ACTIONABLE_LABELS]
+        return True, f"Non-actionable label detected: {matched_labels}"
 
     # Check for bot authors (common bot patterns)
     if author:
@@ -251,11 +300,86 @@ def is_noise_issue(
     return False, None
 
 
+def is_support_ticket(
+    title: str,
+    body: str,
+    labels: list[str],
+) -> tuple[bool, str | None]:
+    """
+    Determine if an issue is likely a support ticket or question.
+
+    This heuristic detects issues that are primarily asking for help or clarification
+    rather than reporting bugs or requesting features.
+
+    Args:
+        title: Issue title
+        body: Issue body
+        labels: Issue labels
+
+    Returns:
+        Tuple of (is_support, reason)
+    """
+    # Check for support/question labels
+    if any(label.lower() in LOW_SIGNAL_LABELS for label in labels):
+        matched_labels = [label for label in labels if label.lower() in LOW_SIGNAL_LABELS]
+        return True, f"Support/question label detected: {matched_labels}"
+
+    # Combine title and body for keyword search
+    combined_text = f"{title} {body}".lower()
+
+    # Check for support keywords in title and body using pre-compiled patterns
+    for pattern, description in SUPPORT_KEYWORD_PATTERNS.items():
+        if pattern.search(combined_text):
+            return True, f"Support ticket indicator: {description}"
+
+    return False, None
+
+
+def is_low_signal_issue(
+    title: str,
+    body: str,
+    labels: list[str],
+    author: str | None,
+    comment_count: int,
+    enable_support_filter: bool = True,
+) -> tuple[bool, str | None]:
+    """
+    Comprehensive check for low-signal issues including spam and support tickets.
+
+    This function combines noise detection and support ticket detection with
+    configurable heuristics.
+
+    Args:
+        title: Issue title
+        body: Issue body
+        labels: Issue labels
+        author: Issue author username
+        comment_count: Number of comments
+        enable_support_filter: Whether to filter support tickets/questions
+
+    Returns:
+        Tuple of (is_low_signal, reason)
+    """
+    # First check for basic noise/spam
+    is_noise, noise_reason = is_noise_issue(title, body, labels, author, comment_count)
+    if is_noise:
+        return True, noise_reason
+
+    # Check for support tickets if enabled
+    if enable_support_filter:
+        is_support, support_reason = is_support_ticket(title, body, labels)
+        if is_support:
+            return True, support_reason
+
+    return False, None
+
+
 def normalize_github_issue(
     issue_data: dict[str, Any],
     comments_data: list[dict[str, Any]],
     max_text_length: int,
     noise_filter_enabled: bool = True,
+    support_filter_enabled: bool = True,
 ) -> NormalizedIssue:
     """
     Normalize a GitHub issue and its comments into a clean, structured format.
@@ -265,6 +389,7 @@ def normalize_github_issue(
         comments_data: Raw GitHub comments data
         max_text_length: Maximum combined text length
         noise_filter_enabled: Whether to apply noise filtering
+        support_filter_enabled: Whether to filter support tickets/questions
 
     Returns:
         Normalized issue with cleaned and truncated content
@@ -355,8 +480,8 @@ def normalize_github_issue(
     if noise_filter_enabled:
         author_data = issue_data.get("user")
         author = author_data["login"] if author_data else None
-        is_noise, noise_reason = is_noise_issue(
-            title, cleaned_body, labels, author, len(normalized_comments)
+        is_noise, noise_reason = is_low_signal_issue(
+            title, cleaned_body, labels, author, len(normalized_comments), support_filter_enabled
         )
 
     return NormalizedIssue(

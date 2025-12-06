@@ -308,7 +308,9 @@ nano .env  # or vim, code, etc.
 | `IDEA_GEN_GITHUB_ISSUE_LIMIT` | No | `None` | Maximum number of issues to ingest per repository (None for no limit). Use for large repositories to focus on most recently updated issues. | `.env` or CLI |
 | **Text Processing** |
 | `IDEA_GEN_MAX_TEXT_LENGTH` | No | `8000` | Maximum combined length of issue body + comments (chars) | `.env` |
+| **Filtering Configuration** |
 | `IDEA_GEN_NOISE_FILTER_ENABLED` | No | `true` | Enable automatic noise/spam detection | `.env` |
+| `IDEA_GEN_SUPPORT_FILTER_ENABLED` | No | `true` | Enable support ticket/question filtering | `.env` |
 | **LLM Configuration** |
 | `IDEA_GEN_LLM_TIMEOUT` | No | `120.0` | LLM request timeout in seconds | `.env` |
 | `IDEA_GEN_LLM_MAX_RETRIES` | No | `3` | Maximum retry attempts for failed LLM requests | `.env` |
@@ -618,6 +620,87 @@ Summary:
   Truncated: 12
 
 Saved normalized issues to: data/facebook_react_issues.json
+```
+
+#### Filtering Configuration
+
+The ingestion stage applies two types of filters to identify low-signal issues:
+
+**1. Basic Noise/Spam Detection** (always enabled when `IDEA_GEN_NOISE_FILTER_ENABLED=true`):
+- **Non-actionable labels**: spam, invalid, wontfix, duplicate, off-topic, declined, stale
+- **Bot authors**: dependabot, renovate, and other automated contributors
+- **Low-quality content**: Single-word titles, empty or very short bodies (< 10 chars)
+- **Spam patterns**: Common test messages like "test", "testing", "hello", "hi", "hey"
+
+**2. Support Ticket/Question Detection** (configurable via `IDEA_GEN_SUPPORT_FILTER_ENABLED`):
+
+Enabled by default to filter out support requests and questions that aren't feature requests or bug reports:
+
+- **Support labels**: support, question, help wanted, needs help, how-to, usage, discussion
+- **Question keywords** (case-insensitive, in title or body):
+  - "how do I", "how can I", "how to"
+  - "what is the", "what are the"
+  - "where do I", "where can I"
+  - "why is", "why doesn't"
+  - "need help", "can someone help"
+  - "cannot figure out", "cannot understand"
+
+**Configuration:**
+
+```bash
+# In .env file
+IDEA_GEN_NOISE_FILTER_ENABLED=true         # Enable basic noise/spam detection
+IDEA_GEN_SUPPORT_FILTER_ENABLED=true       # Enable support ticket filtering
+```
+
+**Disabling filters:**
+
+```bash
+# Disable support ticket filtering if your project uses "question" for valid issues
+# or "help wanted" to mark good issues for community contribution
+IDEA_GEN_SUPPORT_FILTER_ENABLED=false
+
+# Disable all filtering (not recommended)
+IDEA_GEN_NOISE_FILTER_ENABLED=false
+IDEA_GEN_SUPPORT_FILTER_ENABLED=false
+```
+
+**Important Caveats:**
+
+- **Over-filtering**: Legitimate feature requests phrased as questions may be flagged
+  - Example: "How can we improve authentication?" might be flagged
+  
+- **"help wanted" label**: This label is included in support filtering as it often indicates
+  requests for assistance. However, many projects use "help wanted" to mark valuable issues
+  that need community contribution. If your project follows this pattern, disable support filtering.
+  - Mitigation: Disable support filtering or review flagged issues manually
+  
+- **Label repurposing**: Projects that use "question" for valid work items should disable support filtering
+
+- **Language limitations**: Keyword matching is English-centric and may not work for non-English repositories
+
+- **Deterministic only**: All filtering is rule-based without LLM inference for consistency and explainability
+
+**What happens to filtered issues:**
+
+Filtered issues are NOT removed from the data. They are:
+1. Included in `data/owner_repo_issues.json` with `is_noise: true`
+2. Tagged with a `noise_reason` field explaining why they were flagged
+3. Can be skipped in later stages using the `--skip-noise` flag
+4. Still available for manual review if needed
+
+**Monitoring filtered issues:**
+
+```bash
+# Check how many issues were flagged
+jq '[.[] | select(.is_noise == true)] | length' data/owner_repo_issues.json
+
+# View reasons for filtering
+jq '[.[] | select(.is_noise == true) | {number, title, reason: .noise_reason}]' \
+  data/owner_repo_issues.json
+
+# Review a specific flagged issue
+jq '.[] | select(.number == 42)' data/owner_repo_issues.json
 ```
 
 ### Stage 3: Summarize
